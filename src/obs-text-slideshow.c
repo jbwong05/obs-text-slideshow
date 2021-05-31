@@ -694,6 +694,16 @@ static bool text_ss_audio_render(void *data, uint64_t *ts_out,
 	return success;
 }
 
+static void text_ss_enum_sources(void *data, 
+		obs_source_enum_proc_t cb, void *param) {
+	struct text_slideshow *text_ss = data;
+
+	pthread_mutex_lock(&text_ss->mutex);
+	if (text_ss->transition)
+		cb(text_ss->source, text_ss->transition, param);
+	pthread_mutex_unlock(&text_ss->mutex);
+}
+
 struct obs_source_info text_slideshow_info = {
 	.id = "text-slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -708,8 +718,8 @@ struct obs_source_info text_slideshow_info = {
 	.video_render = text_ss_video_render,
 	.video_tick = text_ss_video_tick,
 	.audio_render = text_ss_audio_render,
-	/*.enum_active_sources = ss_enum_sources,
-	.get_width = ss_width,
+	.enum_active_sources = text_ss_enum_sources,
+	/*.get_width = ss_width,
 	.get_height = ss_height,
 	.get_defaults = ss_defaults,
 	.get_properties = ss_properties,
