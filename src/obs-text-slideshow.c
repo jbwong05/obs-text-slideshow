@@ -52,7 +52,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define T_RANDOMIZE                    T_("Randomize")
 #define T_LOOP                         T_("Loop")
 #define T_HIDE                         T_("HideWhenDone")
-#define T_FILES                        T_("Files")
+#define T_TEXTS                        T_("Texts")
 #define T_BEHAVIOR                     T_("PlaybackBehavior")
 #define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
 #define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
@@ -714,6 +714,88 @@ static uint32_t text_ss_height(void *data) {
 	return text_ss->transition ? text_ss->cy : 0;
 }
 
+static void text_ss_defaults(obs_data_t *settings) {
+	obs_data_set_default_string(settings, S_TRANSITION, "fade");
+	obs_data_set_default_int(settings, S_SLIDE_TIME, 8000);
+	obs_data_set_default_int(settings, S_TR_SPEED, 700);
+	obs_data_set_default_string(settings, S_CUSTOM_SIZE,
+				    T_CUSTOM_SIZE_AUTO);
+	obs_data_set_default_string(settings, S_BEHAVIOR,
+				    S_BEHAVIOR_ALWAYS_PLAY);
+	obs_data_set_default_string(settings, S_MODE, S_MODE_AUTO);
+	obs_data_set_default_bool(settings, S_LOOP, true);
+}
+
+static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
+
+#define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
+
+static obs_properties_t *text_ss_properties(void *data) {
+	obs_properties_t *ppts = obs_properties_create();
+	struct text_slideshow *text_ss = data;
+	struct obs_video_info ovi;
+	obs_property_t *p;
+	int cx;
+	int cy;
+
+	/* ----------------- */
+
+	obs_get_video_info(&ovi);
+	cx = (int)ovi.base_width;
+	cy = (int)ovi.base_height;
+
+	/* ----------------- */
+
+	p = obs_properties_add_list(ppts, S_BEHAVIOR, T_BEHAVIOR,
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_BEHAVIOR_ALWAYS_PLAY,
+				     S_BEHAVIOR_ALWAYS_PLAY);
+	obs_property_list_add_string(p, T_BEHAVIOR_STOP_RESTART,
+				     S_BEHAVIOR_STOP_RESTART);
+	obs_property_list_add_string(p, T_BEHAVIOR_PAUSE_UNPAUSE,
+				     S_BEHAVIOR_PAUSE_UNPAUSE);
+
+	p = obs_properties_add_list(ppts, S_MODE, T_MODE, OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_MODE_AUTO, S_MODE_AUTO);
+	obs_property_list_add_string(p, T_MODE_MANUAL, S_MODE_MANUAL);
+
+	p = obs_properties_add_list(ppts, S_TRANSITION, T_TRANSITION,
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_TR_CUT, TR_CUT);
+	obs_property_list_add_string(p, T_TR_FADE, TR_FADE);
+	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
+	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
+
+	obs_properties_add_int(ppts, S_SLIDE_TIME, T_SLIDE_TIME, 50, 3600000,
+			       50);
+	obs_properties_add_int(ppts, S_TR_SPEED, T_TR_SPEED, 0, 3600000, 50);
+	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
+	obs_properties_add_bool(ppts, S_HIDE, T_HIDE);
+	obs_properties_add_bool(ppts, S_RANDOMIZE, T_RANDOMIZE);
+
+	p = obs_properties_add_list(ppts, S_CUSTOM_SIZE, T_CUSTOM_SIZE,
+				    OBS_COMBO_TYPE_EDITABLE,
+				    OBS_COMBO_FORMAT_STRING);
+
+	obs_property_list_add_string(p, T_CUSTOM_SIZE_AUTO, T_CUSTOM_SIZE_AUTO);
+
+	for (size_t i = 0; i < NUM_ASPECTS; i++)
+		obs_property_list_add_string(p, aspects[i], aspects[i]);
+
+	char str[32];
+	snprintf(str, 32, "%dx%d", cx, cy);
+	obs_property_list_add_string(p, str, str);
+
+	obs_properties_add_editable_list(ppts, S_TEXTS, T_TEXTS,
+					 OBS_EDITABLE_LIST_TYPE_STRINGS,
+					 NULL, NULL);
+
+	return ppts;
+}
+
 struct obs_source_info text_slideshow_info = {
 	.id = "text-slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -731,9 +813,9 @@ struct obs_source_info text_slideshow_info = {
 	.enum_active_sources = text_ss_enum_sources,
 	.get_width = text_ss_width,
 	.get_height = text_ss_height,
-	/*.get_defaults = ss_defaults,
-	.get_properties = ss_properties,
-	.missing_files = ss_missingfiles,
+	.get_defaults = text_ss_defaults,
+	.get_properties = text_ss_properties,
+	/*.missing_files = ss_missingfiles,
 	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
 	.media_play_pause = ss_play_pause,
 	.media_restart = ss_restart,
