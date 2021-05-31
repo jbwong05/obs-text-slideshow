@@ -6,14 +6,14 @@ project(obs-plugintemplate VERSION 1.0.0)
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want
 # to see as the author of the plugin (in the plugin's metadata itself and in the installers)
-set(PLUGIN_AUTHOR "Your Name Here")
+set(PLUGIN_AUTHOR "Joshua Wong")
 
 # Replace `com.example.obs-plugin-template` with a unique Bundle ID for macOS releases
 # (used both in the installer and when submitting the installer for notarization)
-set(MACOS_BUNDLEID "com.example.obs-plugintemplate")
+set(MACOS_BUNDLEID "com.example.obs-text-slideshow")
 
 # Replace `me@contoso.com` with the maintainer email address you want to put in Linux packages
-set(LINUX_MAINTAINER_EMAIL "me@contoso.com")
+set(LINUX_MAINTAINER_EMAIL "jbwong05@gmail.com")
 
 # TAKE NOTE: No need to edit things past this point
 
