@@ -78,7 +78,7 @@ enum behavior {
 	BEHAVIOR_ALWAYS_PLAY,
 };
 
-struct slideshow {
+struct text_slideshow {
 	obs_source_t *source;
 
 	bool randomize;
@@ -121,7 +121,130 @@ static const char *text_ss_getname(void *unused) {
     return obs_module_text("TextSlideshow");
 }
 
+static void play_pause_hotkey(void *data, obs_hotkey_id id,
+			      obs_hotkey_t *hotkey, bool pressed) {
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
 
+	struct text_slideshow *text_ss = data;
+
+	if (pressed && obs_source_showing(text_ss->source))
+		obs_source_media_play_pause(text_ss->source, !text_ss->paused);
+}
+
+static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+			   bool pressed) {
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct text_slideshow *text_ss = data;
+
+	if (pressed && obs_source_showing(text_ss->source))
+		obs_source_media_restart(text_ss->source);
+}
+
+static void stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+			bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct text_slideshow *text_ss = data;
+
+	if (pressed && obs_source_showing(text_ss->source))
+		obs_source_media_stop(text_ss->source);
+}
+
+static void next_slide_hotkey(void *data, obs_hotkey_id id,
+			      obs_hotkey_t *hotkey, bool pressed) {
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct text_slideshow *text_ss = data;
+
+	if (!text_ss->manual)
+		return;
+
+	if (pressed && obs_source_showing(text_ss->source))
+		obs_source_media_next(text_ss->source);
+}
+
+static void previous_slide_hotkey(void *data, obs_hotkey_id id,
+				  obs_hotkey_t *hotkey, bool pressed) {
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct text_slideshow *text_ss = data;
+
+	if (!text_ss->manual)
+		return;
+
+	if (pressed && obs_source_showing(text_ss->source))
+		obs_source_media_previous(text_ss->source);
+}
+
+static void free_text_srcs(struct darray *array) {
+	DARRAY(struct text_data) text_srcs;
+	text_srcs.da = *array;
+
+	for (size_t i = 0; i < text_srcs.num; i++) {
+		bfree(text_srcs.array[i].text);
+		obs_source_release(text_srcs.array[i].source);
+	}
+
+	da_free(text_srcs);
+}
+
+static void text_ss_destroy(void *data) {
+	struct text_slideshow *text_ss = data;
+
+	obs_source_release(text_ss->transition);
+	free_text_srcs(&text_ss->text_srcs.da);
+	pthread_mutex_destroy(&text_ss->mutex);
+	bfree(text_ss);
+}
+
+static void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
+	struct text_slideshow *text_ss = bzalloc(sizeof(*text_ss));
+
+	text_ss->source = source;
+
+	text_ss->manual = false;
+	text_ss->paused = false;
+	text_ss->stop = false;
+
+	text_ss->play_pause_hotkey = obs_hotkey_register_source(
+		source, "TextSlideShow.PlayPause",
+		obs_module_text("TextSlideShow.PlayPause"), play_pause_hotkey, text_ss);
+
+	text_ss->restart_hotkey = obs_hotkey_register_source(
+		source, "TextSlideShow.Restart",
+		obs_module_text("TextSlideShow.Restart"), restart_hotkey, text_ss);
+
+	text_ss->stop_hotkey = obs_hotkey_register_source(
+		source, "TextSlideShow.Stop", obs_module_text("TextSlideShow.Stop"),
+		stop_hotkey, text_ss);
+
+	text_ss->prev_hotkey = obs_hotkey_register_source(
+		source, "TextSlideShow.NextSlide",
+		obs_module_text("TextSlideShow.NextSlide"), next_slide_hotkey, text_ss);
+
+	text_ss->prev_hotkey = obs_hotkey_register_source(
+		source, "TextSlideShow.PreviousSlide",
+		obs_module_text("TextSlideShow.PreviousSlide"),
+		previous_slide_hotkey, text_ss);
+
+	pthread_mutex_init_value(&text_ss->mutex);
+	if (pthread_mutex_init(&text_ss->mutex, NULL) != 0) {
+		text_ss_destroy(text_ss);
+		return NULL;
+	}
+
+	obs_source_update(source, NULL);
+
+	UNUSED_PARAMETER(settings);
+	return text_ss;
+}
 
 struct obs_source_info text_slideshow_info = {
 	.id = "text-slideshow",
@@ -129,9 +252,9 @@ struct obs_source_info text_slideshow_info = {
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
 			OBS_SOURCE_COMPOSITE | OBS_SOURCE_CONTROLLABLE_MEDIA,
 	.get_name = text_ss_getname,
-	/*.create = ss_create,
-	.destroy = ss_destroy,
-	.update = ss_update,
+	.create = text_ss_create,
+	.destroy = text_ss_destroy,
+	/*.update = ss_update,
 	.activate = ss_activate,
 	.deactivate = ss_deactivate,
 	.video_render = ss_video_render,
