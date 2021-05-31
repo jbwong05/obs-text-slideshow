@@ -17,6 +17,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 #include <obs-module.h>
+#include <util/threading.h>
+#include <util/platform.h>
+#include <util/darray.h>
+#include <util/dstr.h>
 
 #define S_TR_SPEED                     "transition_speed"
 #define S_CUSTOM_SIZE                  "use_custom_size"
@@ -62,6 +66,55 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define T_TR_FADE                      T_TR_("Fade")
 #define T_TR_SWIPE                     T_TR_("Swipe")
 #define T_TR_SLIDE                     T_TR_("Slide")
+
+struct text_data {
+	char *text;
+	obs_source_t *source;
+};
+
+enum behavior {
+	BEHAVIOR_STOP_RESTART,
+	BEHAVIOR_PAUSE_UNPAUSE,
+	BEHAVIOR_ALWAYS_PLAY,
+};
+
+struct slideshow {
+	obs_source_t *source;
+
+	bool randomize;
+	bool loop;
+	bool restart_on_activate;
+	bool pause_on_deactivate;
+	bool restart;
+	bool manual;
+	bool hide;
+	bool use_cut;
+	bool paused;
+	bool stop;
+	float slide_time;
+	uint32_t tr_speed;
+	const char *tr_name;
+	obs_source_t *transition;
+
+	float elapsed;
+	size_t cur_item;
+
+	uint32_t cx;
+	uint32_t cy;
+
+	pthread_mutex_t mutex;
+	DARRAY(struct text_data) text_srcs;
+
+	enum behavior behavior;
+
+	obs_hotkey_id play_pause_hotkey;
+	obs_hotkey_id restart_hotkey;
+	obs_hotkey_id stop_hotkey;
+	obs_hotkey_id next_hotkey;
+	obs_hotkey_id prev_hotkey;
+
+	enum obs_media_state state;
+};
 
 static const char *text_ss_getname(void *unused) {
     UNUSED_PARAMETER(unused);
