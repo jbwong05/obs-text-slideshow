@@ -29,7 +29,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define S_RANDOMIZE                    "randomize"
 #define S_LOOP                         "loop"
 #define S_HIDE                         "hide"
-#define S_FILES                        "files"
+#define S_TEXTS                        "texts"
 #define S_BEHAVIOR                     "playback_behavior"
 #define S_BEHAVIOR_STOP_RESTART        "stop_restart"
 #define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
@@ -246,6 +246,293 @@ static void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 	return text_ss;
 }
 
+static inline bool item_valid(struct text_slideshow *text_ss) {
+	return text_ss->text_srcs.num && 
+		text_ss->cur_item < text_ss->text_srcs.num;
+}
+
+static void set_media_state(void *data, enum obs_media_state state) {
+	struct text_slideshow *text_ss = data;
+	text_ss->state = state;
+}
+
+static void do_transition(void *data, bool to_null) {
+	struct text_slideshow *text_ss = data;
+	bool valid = item_valid(text_ss);
+
+	if (valid && text_ss->use_cut) {
+		obs_transition_set(text_ss->transition,
+				   text_ss->text_srcs.array[text_ss->cur_item].source);
+
+	} else if (valid && !to_null) {
+		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
+				     text_ss->tr_speed,
+				     text_ss->text_srcs.array[text_ss->cur_item].source);
+
+	} else {
+		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
+				     text_ss->tr_speed, NULL);
+		set_media_state(text_ss, OBS_MEDIA_STATE_ENDED);
+		obs_source_media_ended(text_ss->source);
+	}
+}
+
+static obs_source_t *get_source(struct darray *array, const char *text) {
+	DARRAY(struct text_data) text_srcs;
+	obs_source_t *source = NULL;
+
+	text_srcs.da = *array;
+
+	for (size_t i = 0; i < text_srcs.num; i++) {
+		const char *curr_text = text_srcs.array[i].text;
+
+		if (strcmp(text, curr_text) == 0) {
+			source = text_srcs.array[i].source;
+			obs_source_addref(source);
+			break;
+		}
+	}
+
+	return source;
+}
+
+static obs_source_t *create_source(const char *text) {
+	obs_data_t *settings = obs_data_create();
+	obs_source_t *source;
+
+	// TODO: implement private text source creation
+	/*obs_data_set_string(settings, "file", file);
+	obs_data_set_bool(settings, "unload", false);
+	source = obs_source_create_private("image_source", NULL, settings);*/
+
+	obs_data_release(settings);
+	return source;
+}
+
+static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
+		     const char *text, uint32_t *cx, uint32_t *cy) {
+	DARRAY(struct text_data) new_text_data;
+	struct text_data data;
+	obs_source_t *new_source;
+
+	new_text_data.da = *array;
+
+	// Allow text srcs with same text
+	// pthread_mutex_lock(&text_ss->mutex);
+	// new_source = get_source(&text_ss->text_srcs.da, text);
+	// pthread_mutex_unlock(&text_ss->mutex);
+
+	//if (!new_source)
+	//	new_source = get_source(&new_text_data.da, text);
+	if (!new_source)
+		new_source = create_source(text);
+
+	if (new_source) {
+		uint32_t new_cx = obs_source_get_width(new_source);
+		uint32_t new_cy = obs_source_get_height(new_source);
+
+		data.text = bstrdup(text);
+		data.source = new_source;
+		da_push_back(new_text_data, &data);
+
+		if (new_cx > *cx)
+			*cx = new_cx;
+		if (new_cy > *cy)
+			*cy = new_cy;
+
+		void *source_data = obs_obj_get_data(new_source);
+	}
+
+	*array = new_text_data.da;
+}
+
+static void free_text_src(struct darray *array) {
+	DARRAY(struct text_data) text_srcs;
+	text_srcs.da = *array;
+
+	for (size_t i = 0; i < text_srcs.num; i++) {
+		bfree(text_srcs.array[i].text);
+		obs_source_release(text_srcs.array[i].source);
+	}
+
+	da_free(text_srcs);
+}
+
+static inline size_t random_text_src(struct text_slideshow *text_ss) {
+	return (size_t)rand() % text_ss->text_srcs.num;
+}
+
+static void text_ss_update(void *data, obs_data_t *settings) {
+	DARRAY(struct text_data) new_text_srcs;
+	DARRAY(struct text_data) old_text_srcs;
+	obs_source_t *new_tr = NULL;
+	obs_source_t *old_tr = NULL;
+	struct text_slideshow *text_ss = data;
+	obs_data_array_t *array;
+	const char *tr_name;
+	uint32_t new_duration;
+	uint32_t new_speed;
+	uint32_t cx = 0;
+	uint32_t cy = 0;
+	size_t count;
+	const char *behavior;
+	const char *mode;
+
+	/* ------------------------------------- */
+	/* get settings data */
+
+	da_init(new_text_srcs);
+
+	behavior = obs_data_get_string(settings, S_BEHAVIOR);
+
+	if (astrcmpi(behavior, S_BEHAVIOR_PAUSE_UNPAUSE) == 0)
+		text_ss->behavior = BEHAVIOR_PAUSE_UNPAUSE;
+	else if (astrcmpi(behavior, S_BEHAVIOR_ALWAYS_PLAY) == 0)
+		text_ss->behavior = BEHAVIOR_ALWAYS_PLAY;
+	else /* S_BEHAVIOR_STOP_RESTART */
+		text_ss->behavior = BEHAVIOR_STOP_RESTART;
+
+	mode = obs_data_get_string(settings, S_MODE);
+
+	text_ss->manual = (astrcmpi(mode, S_MODE_MANUAL) == 0);
+
+	tr_name = obs_data_get_string(settings, S_TRANSITION);
+	if (astrcmpi(tr_name, TR_CUT) == 0)
+		tr_name = "cut_transition";
+	else if (astrcmpi(tr_name, TR_SWIPE) == 0)
+		tr_name = "swipe_transition";
+	else if (astrcmpi(tr_name, TR_SLIDE) == 0)
+		tr_name = "slide_transition";
+	else
+		tr_name = "fade_transition";
+
+	text_ss->randomize = obs_data_get_bool(settings, S_RANDOMIZE);
+	text_ss->loop = obs_data_get_bool(settings, S_LOOP);
+	text_ss->hide = obs_data_get_bool(settings, S_HIDE);
+
+	if (!text_ss->tr_name || strcmp(tr_name, text_ss->tr_name) != 0)
+		new_tr = obs_source_create_private(tr_name, NULL, NULL);
+
+	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
+	new_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
+
+	array = obs_data_get_array(settings, S_TEXTS);
+	count = obs_data_array_count(array);
+
+	/* ------------------------------------- */
+	/* create new list of sources */
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *item = obs_data_array_item(array, i);
+		const char *curr_text = obs_data_get_string(item, "value");
+		create_source(curr_text);
+		obs_data_release(item);
+	}
+
+	/* ------------------------------------- */
+	/* update settings data */
+
+	pthread_mutex_lock(&text_ss->mutex);
+
+	old_text_srcs.da = text_ss->text_srcs.da;
+	text_ss->text_srcs.da = new_text_srcs.da;
+	if (new_tr) {
+		old_tr = text_ss->transition;
+		text_ss->transition = new_tr;
+	}
+
+	if (strcmp(tr_name, "cut_transition") != 0) {
+		if (new_duration < 100)
+			new_duration = 100;
+
+		new_duration += new_speed;
+	} else {
+		if (new_duration < 50)
+			new_duration = 50;
+	}
+
+	text_ss->tr_speed = new_speed;
+	text_ss->tr_name = tr_name;
+	text_ss->slide_time = (float)new_duration / 1000.0f;
+
+	pthread_mutex_unlock(&text_ss->mutex);
+
+	/* ------------------------------------- */
+	/* clean up and restart transition */
+
+	if (old_tr)
+		obs_source_release(old_tr);
+	free_text_srcs(&old_text_srcs.da);
+
+	/* ------------------------- */
+
+	const char *res_str = obs_data_get_string(settings, S_CUSTOM_SIZE);
+	bool aspect_only = false, use_auto = true;
+	int cx_in = 0, cy_in = 0;
+
+	if (strcmp(res_str, T_CUSTOM_SIZE_AUTO) != 0) {
+		int ret = sscanf(res_str, "%dx%d", &cx_in, &cy_in);
+		if (ret == 2) {
+			aspect_only = false;
+			use_auto = false;
+		} else {
+			ret = sscanf(res_str, "%d:%d", &cx_in, &cy_in);
+			if (ret == 2) {
+				aspect_only = true;
+				use_auto = false;
+			}
+		}
+	}
+
+	if (!use_auto) {
+		double cx_f = (double)cx;
+		double cy_f = (double)cy;
+
+		double old_aspect = cx_f / cy_f;
+		double new_aspect = (double)cx_in / (double)cy_in;
+
+		if (aspect_only) {
+			if (fabs(old_aspect - new_aspect) > EPSILON) {
+				if (new_aspect > old_aspect)
+					cx = (uint32_t)(cy_f * new_aspect);
+				else
+					cy = (uint32_t)(cx_f / new_aspect);
+			}
+		} else {
+			cx = (uint32_t)cx_in;
+			cy = (uint32_t)cy_in;
+		}
+	}
+
+	/* ------------------------- */
+
+	text_ss->cx = cx;
+	text_ss->cy = cy;
+	text_ss->cur_item = 0;
+	text_ss->elapsed = 0.0f;
+	obs_transition_set_size(text_ss->transition, cx, cy);
+	obs_transition_set_alignment(text_ss->transition, OBS_ALIGN_CENTER);
+	obs_transition_set_scale_type(text_ss->transition,
+				      OBS_TRANSITION_SCALE_ASPECT);
+
+	if (text_ss->randomize && text_ss->text_srcs.num)
+		text_ss->cur_item = random_text_src(text_ss);
+	if (new_tr)
+		obs_source_add_active_child(text_ss->source, new_tr);
+	if (text_ss->text_srcs.num) {
+		do_transition(text_ss, false);
+
+		if (text_ss->manual)
+			set_media_state(text_ss, OBS_MEDIA_STATE_PAUSED);
+		else
+			set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
+
+		obs_source_media_started(text_ss->source);
+	}
+
+	obs_data_array_release(array);
+}
+
 struct obs_source_info text_slideshow_info = {
 	.id = "text-slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -254,8 +541,8 @@ struct obs_source_info text_slideshow_info = {
 	.get_name = text_ss_getname,
 	.create = text_ss_create,
 	.destroy = text_ss_destroy,
-	/*.update = ss_update,
-	.activate = ss_activate,
+	.update = text_ss_update,
+	/*.activate = ss_activate,
 	.deactivate = ss_deactivate,
 	.video_render = ss_video_render,
 	.video_tick = ss_video_tick,
