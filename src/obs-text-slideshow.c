@@ -533,6 +533,24 @@ static void text_ss_update(void *data, obs_data_t *settings) {
 	obs_data_array_release(array);
 }
 
+static void text_ss_activate(void *data) {
+	struct text_slideshow *text_ss = data;
+
+	if (text_ss->behavior == BEHAVIOR_STOP_RESTART) {
+		text_ss->restart_on_activate = true;
+		text_ss->use_cut = true;
+	} else if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
+		text_ss->pause_on_deactivate = false;
+	}
+}
+
+static void text_ss_deactivate(void *data) {
+	struct text_slideshow *text_ss = data;
+
+	if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE)
+		text_ss->pause_on_deactivate = true;
+}
+
 struct obs_source_info text_slideshow_info = {
 	.id = "text-slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -542,9 +560,9 @@ struct obs_source_info text_slideshow_info = {
 	.create = text_ss_create,
 	.destroy = text_ss_destroy,
 	.update = text_ss_update,
-	/*.activate = ss_activate,
-	.deactivate = ss_deactivate,
-	.video_render = ss_video_render,
+	.activate = text_ss_activate,
+	.deactivate = text_ss_deactivate,
+	/*.video_render = ss_video_render,
 	.video_tick = ss_video_tick,
 	.audio_render = ss_audio_render,
 	.enum_active_sources = ss_enum_sources,
