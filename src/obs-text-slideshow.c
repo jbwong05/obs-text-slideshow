@@ -796,6 +796,82 @@ static obs_properties_t *text_ss_properties(void *data) {
 	return ppts;
 }
 
+static void text_ss_play_pause(void *data, bool pause) {
+	struct text_slideshow *text_ss = data;
+
+	if (text_ss->stop) {
+		text_ss->stop = false;
+		text_ss->paused = false;
+		do_transition(text_ss, false);
+	} else {
+		text_ss->paused = pause;
+		text_ss->manual = pause;
+	}
+
+	if (pause)
+		set_media_state(text_ss, OBS_MEDIA_STATE_PAUSED);
+	else
+		set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
+}
+
+static void text_ss_restart(void *data) {
+	struct text_slideshow *text_ss = data;
+
+	text_ss->elapsed = 0.0f;
+	text_ss->cur_item = 0;
+	text_ss->stop = false;
+	text_ss->paused = false;
+	do_transition(text_ss, false);
+
+	set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
+}
+
+static void text_ss_stop(void *data) {
+	struct text_slideshow *text_ss = data;
+
+	text_ss->elapsed = 0.0f;
+	text_ss->cur_item = 0;
+
+	do_transition(text_ss, true);
+	text_ss->stop = true;
+	text_ss->paused = false;
+
+	set_media_state(text_ss, OBS_MEDIA_STATE_STOPPED);
+}
+
+static void text_ss_next_slide(void *data) {
+	struct text_slideshow *text_ss = data;
+
+	if (!text_ss->text_srcs.num || 
+			obs_transition_get_time(text_ss->transition) < 1.0f)
+		return;
+
+	if (++text_ss->cur_item >= text_ss->text_srcs.num)
+		text_ss->cur_item = 0;
+
+	do_transition(text_ss, false);
+}
+
+static void text_ss_previous_slide(void *data) {
+	struct text_slideshow *text_ss = data;
+
+	if (!text_ss->text_srcs.num || 
+			obs_transition_get_time(text_ss->transition) < 1.0f)
+		return;
+
+	if (text_ss->cur_item == 0)
+		text_ss->cur_item = text_ss->text_srcs.num - 1;
+	else
+		--text_ss->cur_item;
+
+	do_transition(text_ss, false);
+}
+
+static enum obs_media_state ss_get_state(void *data) {
+	struct text_slideshow *text_ss = data;
+	return text_ss->state;
+}
+
 struct obs_source_info text_slideshow_info = {
 	.id = "text-slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -815,12 +891,11 @@ struct obs_source_info text_slideshow_info = {
 	.get_height = text_ss_height,
 	.get_defaults = text_ss_defaults,
 	.get_properties = text_ss_properties,
-	/*.missing_files = ss_missingfiles,
 	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
-	.media_play_pause = ss_play_pause,
-	.media_restart = ss_restart,
-	.media_stop = ss_stop,
-	.media_next = ss_next_slide,
-	.media_previous = ss_previous_slide,
-	.media_get_state = ss_get_state,*/
+	.media_play_pause = text_ss_play_pause,
+	.media_restart = text_ss_restart,
+	.media_stop = text_ss_stop,
+	.media_next = text_ss_next_slide,
+	.media_previous = text_ss_previous_slide,
+	.media_get_state = ss_get_state,
 };
