@@ -551,6 +551,149 @@ static void text_ss_deactivate(void *data) {
 		text_ss->pause_on_deactivate = true;
 }
 
+static obs_source_t *get_transition(struct text_slideshow *text_ss) {
+	obs_source_t *tr;
+
+	pthread_mutex_lock(&text_ss->mutex);
+	tr = text_ss->transition;
+	obs_source_addref(tr);
+	pthread_mutex_unlock(&text_ss->mutex);
+
+	return tr;
+}
+
+static void text_ss_video_render(void *data, gs_effect_t *effect) {
+	struct text_slideshow *text_ss = data;
+	obs_source_t *transition = get_transition(text_ss);
+
+	if (transition) {
+		obs_source_video_render(transition);
+		obs_source_release(transition);
+	}
+
+	UNUSED_PARAMETER(effect);
+}
+
+static void text_ss_video_tick(void *data, float seconds) {
+	struct text_slideshow *text_ss = data;
+
+	if (!text_ss->transition || !text_ss->slide_time)
+		return;
+
+	if (text_ss->restart_on_activate && text_ss->use_cut) {
+		text_ss->elapsed = 0.0f;
+		text_ss->cur_item = text_ss->randomize ? random_text_src(text_ss) : 0;
+		do_transition(text_ss, false);
+		text_ss->restart_on_activate = false;
+		text_ss->use_cut = false;
+		text_ss->stop = false;
+		return;
+	}
+
+	if (text_ss->pause_on_deactivate || text_ss->manual || text_ss->stop || 
+			text_ss->paused)
+		return;
+
+	/* ----------------------------------------------------- */
+	/* fade to transparency when the file list becomes empty */
+	if (!text_ss->text_srcs.num) {
+		obs_source_t *active_transition_source =
+			obs_transition_get_active_source(text_ss->transition);
+
+		if (active_transition_source) {
+			obs_source_release(active_transition_source);
+			do_transition(text_ss, true);
+		}
+	}
+
+	/* ----------------------------------------------------- */
+	/* do transition when slide time reached                 */
+	text_ss->elapsed += seconds;
+
+	if (text_ss->elapsed > text_ss->slide_time) {
+		text_ss->elapsed -= text_ss->slide_time;
+
+		if (!text_ss->loop && 
+				text_ss->cur_item == text_ss->text_srcs.num - 1) {
+			if (text_ss->hide)
+				do_transition(text_ss, true);
+			else
+				do_transition(text_ss, false);
+
+			return;
+		}
+
+		if (text_ss->randomize) {
+			size_t next = text_ss->cur_item;
+			if (text_ss->text_srcs.num > 1) {
+				while (next == text_ss->cur_item)
+					next = random_text_src(text_ss);
+			}
+			text_ss->cur_item = next;
+
+		} else if (++text_ss->cur_item >= text_ss->text_srcs.num) {
+			text_ss->cur_item = 0;
+		}
+
+		if (text_ss->text_srcs.num)
+			do_transition(text_ss, false);
+	}
+}
+
+static inline bool text_ss_audio_render_(obs_source_t *transition, 
+					uint64_t *ts_out,
+				    struct obs_source_audio_mix *audio_output,
+				    uint32_t mixers, size_t channels,
+				    size_t sample_rate) {
+	struct obs_source_audio_mix child_audio;
+	uint64_t source_ts;
+
+	if (obs_source_audio_pending(transition))
+		return false;
+
+	source_ts = obs_source_get_audio_timestamp(transition);
+	if (!source_ts)
+		return false;
+
+	obs_source_get_audio_mix(transition, &child_audio);
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+		if ((mixers & (1 << mix)) == 0)
+			continue;
+
+		for (size_t ch = 0; ch < channels; ch++) {
+			float *out = audio_output->output[mix].data[ch];
+			float *in = child_audio.output[mix].data[ch];
+
+			memcpy(out, in,
+			       AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS *
+				       sizeof(float));
+		}
+	}
+
+	*ts_out = source_ts;
+
+	UNUSED_PARAMETER(sample_rate);
+	return true;
+}
+
+static bool text_ss_audio_render(void *data, uint64_t *ts_out,
+			    struct obs_source_audio_mix *audio_output,
+			    uint32_t mixers, size_t channels,
+			    size_t sample_rate) {
+	struct text_slideshow *text_ss = data;
+	obs_source_t *transition = get_transition(text_ss);
+	bool success;
+
+	if (!transition)
+		return false;
+
+	success = text_ss_audio_render_(transition, ts_out, audio_output, mixers,
+				   channels, sample_rate);
+
+	obs_source_release(transition);
+	return success;
+}
+
 struct obs_source_info text_slideshow_info = {
 	.id = "text-slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -562,10 +705,10 @@ struct obs_source_info text_slideshow_info = {
 	.update = text_ss_update,
 	.activate = text_ss_activate,
 	.deactivate = text_ss_deactivate,
-	/*.video_render = ss_video_render,
-	.video_tick = ss_video_tick,
-	.audio_render = ss_audio_render,
-	.enum_active_sources = ss_enum_sources,
+	.video_render = text_ss_video_render,
+	.video_tick = text_ss_video_tick,
+	.audio_render = text_ss_audio_render,
+	/*.enum_active_sources = ss_enum_sources,
 	.get_width = ss_width,
 	.get_height = ss_height,
 	.get_defaults = ss_defaults,
