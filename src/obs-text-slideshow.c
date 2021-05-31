@@ -18,6 +18,51 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include <obs-module.h>
 
+#define S_TR_SPEED                     "transition_speed"
+#define S_CUSTOM_SIZE                  "use_custom_size"
+#define S_SLIDE_TIME                   "slide_time"
+#define S_TRANSITION                   "transition"
+#define S_RANDOMIZE                    "randomize"
+#define S_LOOP                         "loop"
+#define S_HIDE                         "hide"
+#define S_FILES                        "files"
+#define S_BEHAVIOR                     "playback_behavior"
+#define S_BEHAVIOR_STOP_RESTART        "stop_restart"
+#define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
+#define S_BEHAVIOR_ALWAYS_PLAY         "always_play"
+#define S_MODE                         "slide_mode"
+#define S_MODE_AUTO                    "mode_auto"
+#define S_MODE_MANUAL                  "mode_manual"
+
+#define TR_CUT                         "cut"
+#define TR_FADE                        "fade"
+#define TR_SWIPE                       "swipe"
+#define TR_SLIDE                       "slide"
+
+#define T_(text) obs_module_text("TextSlideShow." text)
+#define T_TR_SPEED                     T_("TransitionSpeed")
+#define T_CUSTOM_SIZE                  T_("CustomSize")
+#define T_CUSTOM_SIZE_AUTO             T_("CustomSize.Auto")
+#define T_SLIDE_TIME                   T_("SlideTime")
+#define T_TRANSITION                   T_("Transition")
+#define T_RANDOMIZE                    T_("Randomize")
+#define T_LOOP                         T_("Loop")
+#define T_HIDE                         T_("HideWhenDone")
+#define T_FILES                        T_("Files")
+#define T_BEHAVIOR                     T_("PlaybackBehavior")
+#define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
+#define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
+#define T_BEHAVIOR_ALWAYS_PLAY         T_("PlaybackBehavior.AlwaysPlay")
+#define T_MODE                         T_("SlideMode")
+#define T_MODE_AUTO                    T_("SlideMode.Auto")
+#define T_MODE_MANUAL                  T_("SlideMode.Manual")
+
+#define T_TR_(text) obs_module_text("TextSlideShow.Transition." text)
+#define T_TR_CUT                       T_TR_("Cut")
+#define T_TR_FADE                      T_TR_("Fade")
+#define T_TR_SWIPE                     T_TR_("Swipe")
+#define T_TR_SLIDE                     T_TR_("Slide")
+
 static const char *text_ss_getname(void *unused) {
     UNUSED_PARAMETER(unused);
     return obs_module_text("TextSlideshow");
