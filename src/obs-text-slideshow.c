@@ -22,6 +22,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <util/darray.h>
 #include <util/dstr.h>
 
+// slideshow
 #define S_TR_SPEED                     "transition_speed"
 #define S_CUSTOM_SIZE                  "use_custom_size"
 #define S_SLIDE_TIME                   "slide_time"
@@ -38,34 +39,67 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define S_MODE_AUTO                    "mode_auto"
 #define S_MODE_MANUAL                  "mode_manual"
 
+// text freetype2
+#define S_FONT                         "font"
+#define S_TEXT                         "text"
+#define S_FROM_FILE                    "from_file"
+#define S_ANTIALIASING                 "antialiasing"
+#define S_LOG_MODE                     "log_mode"
+#define S_LOG_LINES                    "log_lines"
+#define S_TEXT_FILE                    "text_file"
+#define S_COLOR_1                      "color1"
+#define S_COLOR_2                      "color2"
+#define S_OUTLINE                      "outline"
+#define S_DROP_SHADOW                  "drop_shadow"
+#define S_CUSTOM_WIDTH                 "custom_width"
+#define S_WORD_WRAP                    "word_wrap"
+
+// slideshow
 #define TR_CUT                         "cut"
 #define TR_FADE                        "fade"
 #define TR_SWIPE                       "swipe"
 #define TR_SLIDE                       "slide"
 
-#define T_(text) obs_module_text("TextSlideShow." text)
-#define T_TR_SPEED                     T_("TransitionSpeed")
-#define T_CUSTOM_SIZE                  T_("CustomSize")
-#define T_CUSTOM_SIZE_AUTO             T_("CustomSize.Auto")
-#define T_SLIDE_TIME                   T_("SlideTime")
-#define T_TRANSITION                   T_("Transition")
-#define T_RANDOMIZE                    T_("Randomize")
-#define T_LOOP                         T_("Loop")
-#define T_HIDE                         T_("HideWhenDone")
-#define T_TEXTS                        T_("Texts")
-#define T_BEHAVIOR                     T_("PlaybackBehavior")
-#define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
-#define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
-#define T_BEHAVIOR_ALWAYS_PLAY         T_("PlaybackBehavior.AlwaysPlay")
-#define T_MODE                         T_("SlideMode")
-#define T_MODE_AUTO                    T_("SlideMode.Auto")
-#define T_MODE_MANUAL                  T_("SlideMode.Manual")
+#define T_SS_(text) obs_module_text("SlideShow." text)
+#define T_TR_SPEED                     T_SS_("TransitionSpeed")
+#define T_CUSTOM_SIZE                  T_SS_("CustomSize")
+#define T_CUSTOM_SIZE_AUTO             T_SS_("CustomSize.Auto")
+#define T_SLIDE_TIME                   T_SS_("SlideTime")
+#define T_TRANSITION                   T_SS_("Transition")
+#define T_RANDOMIZE                    T_SS_("Randomize")
+#define T_LOOP                         T_SS_("Loop")
+#define T_HIDE                         T_SS_("HideWhenDone")
+#define T_TEXTS                        T_SS_("Texts")
+#define T_BEHAVIOR                     T_SS_("PlaybackBehavior")
+#define T_BEHAVIOR_STOP_RESTART        T_SS_("PlaybackBehavior.StopRestart")
+#define T_BEHAVIOR_PAUSE_UNPAUSE       T_SS_("PlaybackBehavior.PauseUnpause")
+#define T_BEHAVIOR_ALWAYS_PLAY         T_SS_("PlaybackBehavior.AlwaysPlay")
+#define T_MODE                         T_SS_("SlideMode")
+#define T_MODE_AUTO                    T_SS_("SlideMode.Auto")
+#define T_MODE_MANUAL                  T_SS_("SlideMode.Manual")
 
-#define T_TR_(text) obs_module_text("TextSlideShow.Transition." text)
+#define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 #define T_TR_CUT                       T_TR_("Cut")
 #define T_TR_FADE                      T_TR_("Fade")
 #define T_TR_SWIPE                     T_TR_("Swipe")
 #define T_TR_SLIDE                     T_TR_("Slide")
+
+// text freetype2
+#define T_TXT_(text) obs_module_text("Text." text)
+#define T_FONT                         T_TXT_("Font")
+#define T_TEXT                         T_TXT_("Text")
+#define T_FROM_FILE                    T_TXT_("ReadFromFile")
+#define T_ANTIALIASING                 T_TXT_("Antialiasing")
+#define T_LOG_MODE                     T_TXT_("ChatLogMode")
+#define T_LOG_LINES                    T_TXT_("ChatLogLines")
+#define T_TEXT_FILE                    T_TXT_("TextFile")
+#define T_TEXT_FILE_FILTER             T_TXT_("TextFileFilter")
+#define T_COLOR_1                      T_TXT_("Color1")
+#define T_COLOR_2                      T_TXT_("Color2")
+#define T_OUTLINE                      T_TXT_("Outline")
+#define T_DROP_SHADOW                  T_TXT_("DropShadow")
+#define T_CUSTOM_WIDTH                 T_TXT_("CustomWidth")
+#define T_WORD_WRAP                    T_TXT_("WordWrap")
 
 struct text_data {
 	char *text;
@@ -214,24 +248,24 @@ static void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 	text_ss->stop = false;
 
 	text_ss->play_pause_hotkey = obs_hotkey_register_source(
-		source, "TextSlideShow.PlayPause",
-		obs_module_text("TextSlideShow.PlayPause"), play_pause_hotkey, text_ss);
+		source, "SlideShow.PlayPause",
+		obs_module_text("SlideShow.PlayPause"), play_pause_hotkey, text_ss);
 
 	text_ss->restart_hotkey = obs_hotkey_register_source(
-		source, "TextSlideShow.Restart",
-		obs_module_text("TextSlideShow.Restart"), restart_hotkey, text_ss);
+		source, "SlideShow.Restart",
+		obs_module_text("SlideShow.Restart"), restart_hotkey, text_ss);
 
 	text_ss->stop_hotkey = obs_hotkey_register_source(
-		source, "TextSlideShow.Stop", obs_module_text("TextSlideShow.Stop"),
+		source, "SlideShow.Stop", obs_module_text("SlideShow.Stop"),
 		stop_hotkey, text_ss);
 
 	text_ss->prev_hotkey = obs_hotkey_register_source(
-		source, "TextSlideShow.NextSlide",
-		obs_module_text("TextSlideShow.NextSlide"), next_slide_hotkey, text_ss);
+		source, "SlideShow.NextSlide",
+		obs_module_text("SlideShow.NextSlide"), next_slide_hotkey, text_ss);
 
 	text_ss->prev_hotkey = obs_hotkey_register_source(
-		source, "TextSlideShow.PreviousSlide",
-		obs_module_text("TextSlideShow.PreviousSlide"),
+		source, "SlideShow.PreviousSlide",
+		obs_module_text("SlideShow.PreviousSlide"),
 		previous_slide_hotkey, text_ss);
 
 	pthread_mutex_init_value(&text_ss->mutex);
@@ -730,9 +764,51 @@ static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
 #define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
 
-static obs_properties_t *text_ss_properties(void *data) {
-	obs_properties_t *ppts = obs_properties_create();
-	struct text_slideshow *text_ss = data;
+static void text_properties(obs_properties_t *props) {
+	// TODO:
+	//	Scrolling. Can't think of a way to do it with the render
+	//		targets currently being broken. (0.4.2)
+	//	Better/pixel shader outline/drop shadow
+	//	Some way to pull text files from network, I dunno
+
+	obs_properties_add_font(props, S_FONT, T_FONT);
+
+	obs_properties_add_text(props, S_TEXT, T_TEXT,
+				OBS_TEXT_MULTILINE);
+
+	obs_properties_add_bool(props, S_FROM_FILE,
+				T_FROM_FILE);
+
+	obs_properties_add_bool(props, S_ANTIALIASING,
+				T_ANTIALIASING);
+
+	obs_properties_add_bool(props, S_LOG_MODE,
+				T_LOG_MODE);
+
+	obs_properties_add_int(props, S_LOG_LINES,
+			       T_LOG_LINES, 1, 1000, 1);
+
+	obs_properties_add_path(props, S_TEXT_FILE, T_TEXT_FILE,
+				OBS_PATH_FILE,
+				T_TEXT_FILE, NULL);
+
+	obs_properties_add_color(props, S_COLOR_1, T_COLOR_1);
+
+	obs_properties_add_color(props, S_COLOR_2, T_COLOR_2);
+
+	obs_properties_add_bool(props, S_OUTLINE, T_OUTLINE);
+
+	obs_properties_add_bool(props, S_DROP_SHADOW,
+				T_DROP_SHADOW);
+
+	obs_properties_add_int(props, S_CUSTOM_WIDTH,
+			       T_CUSTOM_WIDTH, 0, 4096, 1);
+
+	obs_properties_add_bool(props, S_WORD_WRAP,
+				T_WORD_WRAP);
+}
+
+static void ss_properites(obs_properties_t *props) {
 	struct obs_video_info ovi;
 	obs_property_t *p;
 	int cx;
@@ -746,7 +822,7 @@ static obs_properties_t *text_ss_properties(void *data) {
 
 	/* ----------------- */
 
-	p = obs_properties_add_list(ppts, S_BEHAVIOR, T_BEHAVIOR,
+	p = obs_properties_add_list(props, S_BEHAVIOR, T_BEHAVIOR,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, T_BEHAVIOR_ALWAYS_PLAY,
@@ -756,12 +832,12 @@ static obs_properties_t *text_ss_properties(void *data) {
 	obs_property_list_add_string(p, T_BEHAVIOR_PAUSE_UNPAUSE,
 				     S_BEHAVIOR_PAUSE_UNPAUSE);
 
-	p = obs_properties_add_list(ppts, S_MODE, T_MODE, OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, S_MODE, T_MODE, OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, T_MODE_AUTO, S_MODE_AUTO);
 	obs_property_list_add_string(p, T_MODE_MANUAL, S_MODE_MANUAL);
 
-	p = obs_properties_add_list(ppts, S_TRANSITION, T_TRANSITION,
+	p = obs_properties_add_list(props, S_TRANSITION, T_TRANSITION,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, T_TR_CUT, TR_CUT);
@@ -769,14 +845,14 @@ static obs_properties_t *text_ss_properties(void *data) {
 	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
 	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
 
-	obs_properties_add_int(ppts, S_SLIDE_TIME, T_SLIDE_TIME, 50, 3600000,
+	obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50, 3600000,
 			       50);
-	obs_properties_add_int(ppts, S_TR_SPEED, T_TR_SPEED, 0, 3600000, 50);
-	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
-	obs_properties_add_bool(ppts, S_HIDE, T_HIDE);
-	obs_properties_add_bool(ppts, S_RANDOMIZE, T_RANDOMIZE);
+	obs_properties_add_int(props, S_TR_SPEED, T_TR_SPEED, 0, 3600000, 50);
+	obs_properties_add_bool(props, S_LOOP, T_LOOP);
+	obs_properties_add_bool(props, S_HIDE, T_HIDE);
+	obs_properties_add_bool(props, S_RANDOMIZE, T_RANDOMIZE);
 
-	p = obs_properties_add_list(ppts, S_CUSTOM_SIZE, T_CUSTOM_SIZE,
+	p = obs_properties_add_list(props, S_CUSTOM_SIZE, T_CUSTOM_SIZE,
 				    OBS_COMBO_TYPE_EDITABLE,
 				    OBS_COMBO_FORMAT_STRING);
 
@@ -789,11 +865,19 @@ static obs_properties_t *text_ss_properties(void *data) {
 	snprintf(str, 32, "%dx%d", cx, cy);
 	obs_property_list_add_string(p, str, str);
 
-	obs_properties_add_editable_list(ppts, S_TEXTS, T_TEXTS,
+	obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
 					 OBS_EDITABLE_LIST_TYPE_STRINGS,
 					 NULL, NULL);
+}
 
-	return ppts;
+static obs_properties_t *text_ss_properties(void *data) {
+	obs_properties_t *props = obs_properties_create();
+	struct text_slideshow *text_ss = data;
+	
+	ss_properites(props);
+	text_properties(props);
+
+	return props;
 }
 
 static void text_ss_play_pause(void *data, bool pause) {
