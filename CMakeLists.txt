@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # Change obs-plugintemplate to your plugin's name in a machine-readable format
 # (e.g.: obs-myawesomeplugin) and set 
-project(obs-plugintemplate VERSION 1.0.0)
+project(obs-text-slideshow VERSION 1.0.0)
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want
 # to see as the author of the plugin (in the plugin's metadata itself and in the installers)
@@ -56,7 +56,8 @@ configure_file(
 )
 
 set(PLUGIN_SOURCES
-	src/plugin-main.c)
+	src/plugin-main.c
+    src/obs-text-slideshow.c)
 
 set(PLUGIN_HEADERS
 	src/plugin-macros.generated.h)

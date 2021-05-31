@@ -1,6 +1,6 @@
 /*
-Plugin Name
-Copyright (C) <Year> <Developer> <Email Address>
+obs-text-slideshow
+Copyright (C) 2021 Joshua Wong jbwong05@gmail.com
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,8 +23,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
+extern struct obs_source_info text_slideshow_info;
+
 bool obs_module_load(void)
 {
+    obs_register_source(&text_slideshow_info);
     blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
     return true;
 }
