@@ -330,21 +330,44 @@ static obs_source_t *get_source(struct darray *array, const char *text) {
 	return source;
 }
 
-static obs_source_t *create_source(const char *text) {
+static obs_source_t *create_source(const char *text, obs_data_t *text_ss_settings) {
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source;
 
-	// TODO: implement private text source creation
-	/*obs_data_set_string(settings, "file", file);
-	obs_data_set_bool(settings, "unload", false);
-	source = obs_source_create_private("image_source", NULL, settings);*/
+	obs_data_set_obj(settings, S_FONT, obs_data_get_obj(text_ss_settings, S_FONT));
+	obs_data_set_bool(settings, S_DROP_SHADOW, 
+		obs_data_get_bool(text_ss_settings, S_DROP_SHADOW));
+	obs_data_set_bool(settings, S_OUTLINE, 
+		obs_data_get_bool(text_ss_settings, S_OUTLINE));
+	obs_data_set_bool(settings, S_WORD_WRAP, 
+		obs_data_get_bool(text_ss_settings, S_WORD_WRAP));
+	obs_data_set_int(settings, S_COLOR_1, 
+		obs_data_get_int(text_ss_settings, S_COLOR_1));
+	obs_data_set_int(settings, S_COLOR_2, 
+		obs_data_get_int(text_ss_settings, S_COLOR_2));
+	obs_data_set_int(settings, S_CUSTOM_WIDTH, 
+		obs_data_get_int(text_ss_settings, S_CUSTOM_WIDTH));
+	obs_data_set_bool(settings, S_FROM_FILE, 
+		obs_data_get_bool(text_ss_settings, S_FROM_FILE));
+	obs_data_set_bool(settings, S_LOG_MODE, 
+		obs_data_get_bool(text_ss_settings, S_LOG_MODE));
+	obs_data_set_int(settings, S_LOG_LINES, 
+		obs_data_get_int(text_ss_settings, S_LOG_LINES));
+	obs_data_set_bool(settings, S_ANTIALIASING, 
+		obs_data_get_bool(text_ss_settings, S_ANTIALIASING));
+	obs_data_set_string(settings, S_TEXT_FILE, 
+		obs_data_get_string(text_ss_settings, S_TEXT_FILE));
+	obs_data_set_string(settings, S_TEXT, 
+		obs_data_get_string(text_ss_settings, S_TEXT));
+	source = obs_source_create_private("text_ft2_source", NULL, settings);
 
 	obs_data_release(settings);
 	return source;
 }
 
 static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
-		     const char *text, uint32_t *cx, uint32_t *cy) {
+		     const char *text, uint32_t *cx, uint32_t *cy, 
+			 obs_data_t *settings) {
 	DARRAY(struct text_data) new_text_data;
 	struct text_data data;
 	obs_source_t *new_source;
@@ -359,7 +382,7 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 	//if (!new_source)
 	//	new_source = get_source(&new_text_data.da, text);
 	if (!new_source)
-		new_source = create_source(text);
+		new_source = create_source(text, settings);
 
 	if (new_source) {
 		uint32_t new_cx = obs_source_get_width(new_source);
@@ -456,10 +479,14 @@ static void text_ss_update(void *data, obs_data_t *settings) {
 	/* ------------------------------------- */
 	/* create new list of sources */
 
+	// image-slideshow recreates private sources every update
+	// can also simply update existing source settings if this method is too 
+	// slow
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *curr_text = obs_data_get_string(item, "value");
-		create_source(curr_text);
+		add_text_src(text_ss, &new_text_srcs.da, curr_text, &cx, &cy, 
+			settings);
 		obs_data_release(item);
 	}
 
