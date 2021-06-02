@@ -53,6 +53,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define S_DROP_SHADOW                  "drop_shadow"
 #define S_CUSTOM_WIDTH                 "custom_width"
 #define S_WORD_WRAP                    "word_wrap"
+#define S_FACE                         "face"
+#define S_SIZE                         "size"
+#define S_FLAGS                        "flags"
+#define S_STYLE                        "style"
 
 // slideshow
 #define TR_CUT                         "cut"
@@ -100,6 +104,14 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define T_DROP_SHADOW                  T_TXT_("DropShadow")
 #define T_CUSTOM_WIDTH                 T_TXT_("CustomWidth")
 #define T_WORD_WRAP                    T_TXT_("WordWrap")
+
+#ifdef _WIN32
+#define DEFAULT_FACE "Arial"
+#elif __APPLE__
+#define DEFAULT_FACE "Helvetica"
+#else
+#define DEFAULT_FACE "Sans Serif"
+#endif
 
 struct text_data {
 	char *text;
@@ -347,21 +359,19 @@ static obs_source_t *create_source(const char *text, obs_data_t *text_ss_setting
 		obs_data_get_int(text_ss_settings, S_COLOR_2));
 	obs_data_set_int(settings, S_CUSTOM_WIDTH, 
 		obs_data_get_int(text_ss_settings, S_CUSTOM_WIDTH));
-	obs_data_set_bool(settings, S_FROM_FILE, 
-		obs_data_get_bool(text_ss_settings, S_FROM_FILE));
+	obs_data_set_bool(settings, S_FROM_FILE, false);
 	obs_data_set_bool(settings, S_LOG_MODE, 
 		obs_data_get_bool(text_ss_settings, S_LOG_MODE));
 	obs_data_set_int(settings, S_LOG_LINES, 
 		obs_data_get_int(text_ss_settings, S_LOG_LINES));
 	obs_data_set_bool(settings, S_ANTIALIASING, 
 		obs_data_get_bool(text_ss_settings, S_ANTIALIASING));
-	obs_data_set_string(settings, S_TEXT_FILE, 
-		obs_data_get_string(text_ss_settings, S_TEXT_FILE));
-	obs_data_set_string(settings, S_TEXT, 
-		obs_data_get_string(text_ss_settings, S_TEXT));
+	obs_data_set_string(settings, S_TEXT_FILE, "");
+	obs_data_set_string(settings, S_TEXT, text);
 	source = obs_source_create_private("text_ft2_source", NULL, settings);
 
 	obs_data_release(settings);
+
 	return source;
 }
 
@@ -374,13 +384,12 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 
 	new_text_data.da = *array;
 
-	// Allow text srcs with same text
-	// pthread_mutex_lock(&text_ss->mutex);
-	// new_source = get_source(&text_ss->text_srcs.da, text);
-	// pthread_mutex_unlock(&text_ss->mutex);
+	pthread_mutex_lock(&text_ss->mutex);
+	new_source = get_source(&text_ss->text_srcs.da, text);
+	pthread_mutex_unlock(&text_ss->mutex);
 
-	//if (!new_source)
-	//	new_source = get_source(&new_text_data.da, text);
+	if (!new_source)
+		new_source = get_source(&new_text_data.da, text);
 	if (!new_source)
 		new_source = create_source(text, settings);
 
@@ -775,7 +784,7 @@ static uint32_t text_ss_height(void *data) {
 	return text_ss->transition ? text_ss->cy : 0;
 }
 
-static void text_ss_defaults(obs_data_t *settings) {
+static void ss_defaults(obs_data_t *settings) {
 	obs_data_set_default_string(settings, S_TRANSITION, "fade");
 	obs_data_set_default_int(settings, S_SLIDE_TIME, 8000);
 	obs_data_set_default_int(settings, S_TR_SPEED, 700);
@@ -785,6 +794,36 @@ static void text_ss_defaults(obs_data_t *settings) {
 				    S_BEHAVIOR_ALWAYS_PLAY);
 	obs_data_set_default_string(settings, S_MODE, S_MODE_AUTO);
 	obs_data_set_default_bool(settings, S_LOOP, true);
+}
+
+static void text_defaults(obs_data_t *settings) {
+	obs_data_t *font_obj = obs_data_create();
+
+	// Currently only supporting text freetype2
+	const uint16_t font_size = 256;
+
+	obs_data_set_default_string(font_obj, S_FACE, DEFAULT_FACE);
+	obs_data_set_default_int(font_obj, S_SIZE, font_size);
+	obs_data_set_default_int(font_obj, S_FLAGS, 0);
+	obs_data_set_default_string(font_obj, S_STYLE, "");
+	obs_data_set_default_obj(settings, S_FONT, font_obj);
+
+	obs_data_set_default_bool(settings, S_ANTIALIASING, true);
+	obs_data_set_default_bool(settings, S_WORD_WRAP, false);
+	obs_data_set_default_bool(settings, S_OUTLINE, false);
+	obs_data_set_default_bool(settings, S_DROP_SHADOW, false);
+
+	obs_data_set_default_int(settings, S_LOG_LINES, 6);
+
+	obs_data_set_default_int(settings, S_COLOR_1, 0xFFFFFFFF);
+	obs_data_set_default_int(settings, S_COLOR_2, 0xFFFFFFFF);
+
+	obs_data_release(font_obj);
+}
+
+static void text_ss_defaults(obs_data_t *settings) {
+	ss_defaults(settings);
+	text_defaults(settings);
 }
 
 static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
@@ -800,12 +839,6 @@ static void text_properties(obs_properties_t *props) {
 
 	obs_properties_add_font(props, S_FONT, T_FONT);
 
-	obs_properties_add_text(props, S_TEXT, T_TEXT,
-				OBS_TEXT_MULTILINE);
-
-	obs_properties_add_bool(props, S_FROM_FILE,
-				T_FROM_FILE);
-
 	obs_properties_add_bool(props, S_ANTIALIASING,
 				T_ANTIALIASING);
 
@@ -814,10 +847,6 @@ static void text_properties(obs_properties_t *props) {
 
 	obs_properties_add_int(props, S_LOG_LINES,
 			       T_LOG_LINES, 1, 1000, 1);
-
-	obs_properties_add_path(props, S_TEXT_FILE, T_TEXT_FILE,
-				OBS_PATH_FILE,
-				T_TEXT_FILE, NULL);
 
 	obs_properties_add_color(props, S_COLOR_1, T_COLOR_1);
 
