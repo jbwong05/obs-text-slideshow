@@ -10,33 +10,42 @@ on:
 
 jobs:
   ubuntu64:
-    name: 'Linux/Ubuntu 64-bit'
+    name: 'Build_Linux'
     runs-on: [ubuntu-18.04]
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v2.3.3
-      - name: Install prerequisites (Apt)
+      - name: 'Install dependencies'
         shell: bash
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get install -y \
-          build-essential \
-          cmake \
-          qtbase5-dev \
-          qtbase5-private-dev \
-          ffmpeg
-          sudo add-apt-repository ppa:obsproject/obs-studio
-          sudo apt-get update
-          sudo apt install obs-studio
-      - name: 'Configure'
+        working-directory: ${{ github.workspace }}
+        run: ./ci/linux/install-dependencies-ubuntu.sh
+      - name: 'Build Plugin'
         shell: bash
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -DBUILD_UBUNTU=yes ..
-      - name: 'Build'
+        working-directory: ${{ github.workspace }}
+        run: ./ci/linux/build-ubuntu.sh
+      - name: 'Package Plugin'
         shell: bash
-        working-directory: ${{ github.workspace }}/build
-        run: make -j${NPROC:-4}
+        working-directory: ${{ github.workspace }}
+        run: ./ci/linux/package-ubuntu.sh
+  macos:
+    name: 'Build_macos'
+    runs-on: [macos-latest]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+      - name: 'Install dependencies'
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: ./ci/macos/install-dependencies-macos.sh
+      - name: 'Build OBS'
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: ./ci/macos/install-build-obs-macos.sh
+      - name: 'Build Plugin'
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: ./ci/macos/build-macos.sh
+      
+
 
 

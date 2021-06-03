@@ -21,23 +21,21 @@ if [ "${HAS_GIT}" = "" ]; then
 fi
 
 echo "=> Downloading and unpacking OBS dependencies"
-wget --quiet --retry-connrefused --waitretry=1 https://obs-nightly.s3.amazonaws.com/osx-deps-2018-08-09.tar.gz
-tar -xf ./osx-deps-2018-08-09.tar.gz -C /tmp
+wget --quiet --retry-connrefused --waitretry=1 https://github.com/obsproject/obs-deps/releases/download/2021-03-25/macos-deps-x86_64-2021-03-25.tar.gz
+tar -xf ./macos-deps-x86_64-2021-03-25.tar.gz -C /tmp
+wget --quiet --retry-connrefused --waitretry=1 https://github.com/obsproject/obs-deps/releases/download/2021-03-25/macos-qt-5.15.2-x86_64-2021-03-25.tar.gz
+tar -xf ./macos-qt-5.15.2-x86_64-2021-03-25.tar.gz -C /tmp
+xattr -r -d com.apple.quarantine /tmp/obsdeps
 
 # Build obs-studio
 cd ..
 echo "=> Cloning obs-studio from GitHub.."
+pwd
 git clone https://github.com/obsproject/obs-studio
 cd obs-studio
 OBSLatestTag=$(git describe --tags --abbrev=0)
 git checkout $OBSLatestTag
 mkdir build && cd build
 echo "=> Building obs-studio.."
-cmake .. \
-	-DBUILD_CAPTIONS=true \
-	-DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
-	-DDISABLE_PLUGINS=true \
-    -DENABLE_SCRIPTING=0 \
-	-DDepsPath=/tmp/obsdeps \
-	-DCMAKE_PREFIX_PATH=/usr/local/opt/qt/lib/cmake \
-&& make -j4
+cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DDISABLE_PLUGINS=true -DENABLE_SCRIPTING=0 -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" ..
+make -j4
