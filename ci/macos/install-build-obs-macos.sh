@@ -30,7 +30,6 @@ xattr -r -d com.apple.quarantine /tmp/obsdeps
 # Build obs-studio
 cd ..
 echo "=> Cloning obs-studio from GitHub.."
-pwd
 git clone https://github.com/obsproject/obs-studio
 cd obs-studio
 OBSLatestTag=$(git describe --tags --abbrev=0)

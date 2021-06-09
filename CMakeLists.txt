@@ -89,6 +89,10 @@ if(WIN32)
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
         add_definitions(/MP /d2FH4-)
+        # Hardcoded path to w32-pthreads atm because find_library not properly finding w32-pthreads.lib
+        target_link_libraries(
+            ${CMAKE_PROJECT_NAME} 
+            ${CMAKE_CURRENT_SOURCE_DIR}/obs-studio/build/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib)
     endif()
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
