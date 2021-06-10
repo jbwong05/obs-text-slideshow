@@ -345,8 +345,9 @@ static obs_source_t *get_source(struct darray *array, const char *text) {
 static obs_source_t *create_source(const char *text, obs_data_t *text_ss_settings) {
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source;
+	obs_data_t *curr_font = obs_data_get_obj(text_ss_settings, S_FONT);
 
-	obs_data_set_obj(settings, S_FONT, obs_data_get_obj(text_ss_settings, S_FONT));
+	obs_data_set_obj(settings, S_FONT, curr_font);
 	obs_data_set_bool(settings, S_DROP_SHADOW, 
 		obs_data_get_bool(text_ss_settings, S_DROP_SHADOW));
 	obs_data_set_bool(settings, S_OUTLINE, 
@@ -370,6 +371,7 @@ static obs_source_t *create_source(const char *text, obs_data_t *text_ss_setting
 	obs_data_set_string(settings, S_TEXT, text);
 	source = obs_source_create_private("text_ft2_source", NULL, settings);
 
+	obs_data_release(curr_font);
 	obs_data_release(settings);
 
 	return source;
