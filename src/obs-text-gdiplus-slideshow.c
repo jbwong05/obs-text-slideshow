@@ -1016,11 +1016,12 @@ static enum obs_media_state ss_get_state(void *data) {
 	return text_ss->state;
 }
 
-struct obs_source_info text_slideshow_info = {
-	.id = "text-slideshow",
+struct obs_source_info text_gdiplus_slideshow_info = {
+	.id = "text-gdiplus-slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_COMPOSITE | OBS_SOURCE_CONTROLLABLE_MEDIA,
+			OBS_SOURCE_COMPOSITE | 
+			OBS_SOURCE_CONTROLLABLE_MEDIA,
 	.get_name = text_ss_getname,
 	.create = text_ss_create,
 	.destroy = text_ss_destroy,

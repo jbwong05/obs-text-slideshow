@@ -57,7 +57,13 @@ configure_file(
 
 set(PLUGIN_SOURCES
 	src/plugin-main.c
-    src/obs-text-slideshow.c)
+    src/obs-text-freetype2-slideshow.c)
+
+if(WIN32)
+    set(PLUGIN_SOURCES 
+        ${PLUGIN_SOURCES} 
+        src/obs-text-gdiplus-slideshow.c)
+endif()
 
 set(PLUGIN_HEADERS
 	src/plugin-macros.generated.h)
