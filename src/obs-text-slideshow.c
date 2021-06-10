@@ -390,6 +390,8 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 
 	if (!new_source)
 		new_source = get_source(&new_text_data.da, text);
+	if (new_source)
+		obs_source_update(new_source, settings);
 	if (!new_source)
 		new_source = create_source(text, settings);
 
