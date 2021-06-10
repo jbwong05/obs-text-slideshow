@@ -39,24 +39,50 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define S_MODE_AUTO                    "mode_auto"
 #define S_MODE_MANUAL                  "mode_manual"
 
-// text freetype2
-#define S_FONT                         "font"
-#define S_TEXT                         "text"
-#define S_FROM_FILE                    "from_file"
-#define S_ANTIALIASING                 "antialiasing"
-#define S_LOG_MODE                     "log_mode"
-#define S_LOG_LINES                    "log_lines"
-#define S_TEXT_FILE                    "text_file"
-#define S_COLOR_1                      "color1"
-#define S_COLOR_2                      "color2"
-#define S_OUTLINE                      "outline"
-#define S_DROP_SHADOW                  "drop_shadow"
-#define S_CUSTOM_WIDTH                 "custom_width"
-#define S_WORD_WRAP                    "word_wrap"
-#define S_FACE                         "face"
-#define S_SIZE                         "size"
-#define S_FLAGS                        "flags"
-#define S_STYLE                        "style"
+// text gdiplus
+#define S_FONT                          "font"
+#define S_USE_FILE                      "read_from_file"
+#define S_FILE                          "file"
+#define S_TEXT                          "text"
+#define S_COLOR                         "color"
+#define S_GRADIENT                      "gradient"
+#define S_GRADIENT_COLOR                "gradient_color"
+#define S_GRADIENT_DIR                  "gradient_dir"
+#define S_GRADIENT_OPACITY              "gradient_opacity"
+#define S_ALIGN                         "align"
+#define S_VALIGN                        "valign"
+#define S_OPACITY                       "opacity"
+#define S_BKCOLOR                       "bk_color"
+#define S_BKOPACITY                     "bk_opacity"
+#define S_VERTICAL                      "vertical"
+#define S_OUTLINE                       "outline"
+#define S_OUTLINE_SIZE                  "outline_size"
+#define S_OUTLINE_COLOR                 "outline_color"
+#define S_OUTLINE_OPACITY               "outline_opacity"
+#define S_CHATLOG_MODE                  "chatlog"
+#define S_CHATLOG_LINES                 "chatlog_lines"
+#define S_EXTENTS                       "extents"
+#define S_EXTENTS_WRAP                  "extents_wrap"
+#define S_EXTENTS_CX                    "extents_cx"
+#define S_EXTENTS_CY                    "extents_cy"
+#define S_TRANSFORM                     "transform"
+#define S_ANTIALIASING                  "antialiasing"
+
+#define S_ALIGN_LEFT                    "left"
+#define S_ALIGN_CENTER                  "center"
+#define S_ALIGN_RIGHT                   "right"
+
+#define S_VALIGN_TOP                    "top"
+#define S_VALIGN_CENTER                 S_ALIGN_CENTER
+#define S_VALIGN_BOTTOM                 "bottom"
+
+#define S_TRANSFORM_NONE                0
+#define S_TRANSFORM_UPPERCASE           1
+#define S_TRANSFORM_LOWERCASE           2
+#define S_TRANSFORM_STARTCASE           3
+
+#define S_ANTIALIASING_NONE             0
+#define S_ANTIALIASING_STANDARD         1
 
 // slideshow
 #define TR_CUT                         "cut"
@@ -88,30 +114,49 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define T_TR_SWIPE                     T_TR_("Swipe")
 #define T_TR_SLIDE                     T_TR_("Slide")
 
-// text freetype2
-#define T_TXT_(text) obs_module_text("Text." text)
-#define T_FONT                         T_TXT_("Font")
-#define T_TEXT                         T_TXT_("Text")
-#define T_FROM_FILE                    T_TXT_("ReadFromFile")
-#define T_ANTIALIASING                 T_TXT_("Antialiasing")
-#define T_LOG_MODE                     T_TXT_("ChatLogMode")
-#define T_LOG_LINES                    T_TXT_("ChatLogLines")
-#define T_TEXT_FILE                    T_TXT_("TextFile")
-#define T_TEXT_FILE_FILTER             T_TXT_("TextFileFilter")
-#define T_COLOR_1                      T_TXT_("Color1")
-#define T_COLOR_2                      T_TXT_("Color2")
-#define T_OUTLINE                      T_TXT_("Outline")
-#define T_DROP_SHADOW                  T_TXT_("DropShadow")
-#define T_CUSTOM_WIDTH                 T_TXT_("CustomWidth")
-#define T_WORD_WRAP                    T_TXT_("WordWrap")
+// text gdiplus
+#define T_(v)                           obs_module_text("Text." v)
+#define T_FONT                          T_("Font")
+#define T_TEXT                          T_("Text")
+#define T_COLOR                         T_("Color")
+#define T_GRADIENT                      T_("Gradient")
+#define T_GRADIENT_COLOR                T_("Gradient.Color")
+#define T_GRADIENT_DIR                  T_("Gradient.Direction")
+#define T_GRADIENT_OPACITY              T_("Gradient.Opacity")
+#define T_ALIGN                         T_("Alignment")
+#define T_VALIGN                        T_("VerticalAlignment")
+#define T_OPACITY                       T_("Opacity")
+#define T_BKCOLOR                       T_("BkColor")
+#define T_BKOPACITY                     T_("BkOpacity")
+#define T_VERTICAL                      T_("Vertical")
+#define T_OUTLINE                       T_("Outline")
+#define T_OUTLINE_SIZE                  T_("Outline.Size")
+#define T_OUTLINE_COLOR                 T_("Outline.Color")
+#define T_OUTLINE_OPACITY               T_("Outline.Opacity")
+#define T_CHATLOG_MODE                  T_("ChatlogMode")
+#define T_CHATLOG_LINES                 T_("ChatlogMode.Lines")
+#define T_EXTENTS                       T_("UseCustomExtents")
+#define T_EXTENTS_WRAP                  T_("UseCustomExtents.Wrap")
+#define T_EXTENTS_CX                    T_("Width")
+#define T_EXTENTS_CY                    T_("Height")
+#define T_TRANSFORM                     T_("Transform")
+#define T_ANTIALIASING                  T_("Antialiasing")
 
-#ifdef _WIN32
-#define DEFAULT_FACE "Arial"
-#elif __APPLE__
-#define DEFAULT_FACE "Helvetica"
-#else
-#define DEFAULT_FACE "Sans Serif"
-#endif
+#define T_FILTER_TEXT_FILES             T_("Filter.TextFiles")
+#define T_FILTER_ALL_FILES              T_("Filter.AllFiles")
+
+#define T_ALIGN_LEFT                    T_("Alignment.Left")
+#define T_ALIGN_CENTER                  T_("Alignment.Center")
+#define T_ALIGN_RIGHT                   T_("Alignment.Right")
+
+#define T_VALIGN_TOP                    T_("VerticalAlignment.Top")
+#define T_VALIGN_CENTER                 T_ALIGN_CENTER
+#define T_VALIGN_BOTTOM                 T_("VerticalAlignment.Bottom")
+
+#define T_TRANSFORM_NONE                T_("Transform.None")
+#define T_TRANSFORM_UPPERCASE           T_("Transform.Uppercase")
+#define T_TRANSFORM_LOWERCASE           T_("Transform.Lowercase")
+#define T_TRANSFORM_STARTCASE           T_("Transform.Startcase")
 
 struct text_data {
 	char *text;
@@ -342,34 +387,71 @@ static obs_source_t *get_source(struct darray *array, const char *text) {
 	return source;
 }
 
+#define obs_data_get_uint32 (uint32_t) obs_data_get_int
+#define obs_data_set_uint32 obs_data_set_int
+
 static obs_source_t *create_source(const char *text, obs_data_t *text_ss_settings) {
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source;
 	obs_data_t *curr_font = obs_data_get_obj(text_ss_settings, S_FONT);
 
+	obs_data_set_string(settings, S_TEXT, text);
 	obs_data_set_obj(settings, S_FONT, curr_font);
-	obs_data_set_bool(settings, S_DROP_SHADOW, 
-		obs_data_get_bool(text_ss_settings, S_DROP_SHADOW));
+	obs_data_set_string(settings, S_ALIGN, 
+		obs_data_get_string(text_ss_settings, S_ALIGN));
+	obs_data_set_string(settings, S_VALIGN, 
+		obs_data_get_string(text_ss_settings, S_VALIGN));
+	obs_data_set_uint32(settings, S_COLOR, 
+		obs_data_get_uint32(text_ss_settings, S_COLOR));
+	obs_data_set_uint32(settings, S_OPACITY, 
+		obs_data_get_uint32(text_ss_settings, S_OPACITY));
+	obs_data_set_bool(settings, S_GRADIENT, 
+		obs_data_get_bool(text_ss_settings, S_GRADIENT));
+	obs_data_set_uint32(settings, S_GRADIENT_COLOR, 
+		obs_data_get_uint32(text_ss_settings, S_GRADIENT_COLOR));
+	obs_data_set_uint32(settings, S_GRADIENT_OPACITY, 
+		obs_data_get_uint32(text_ss_settings, S_GRADIENT_OPACITY));
+	obs_data_set_double(settings, S_GRADIENT_DIR, 
+		obs_data_get_double(text_ss_settings, S_GRADIENT_DIR));
+	obs_data_set_bool(settings, S_VERTICAL, 
+		obs_data_get_bool(text_ss_settings, S_VERTICAL));
 	obs_data_set_bool(settings, S_OUTLINE, 
 		obs_data_get_bool(text_ss_settings, S_OUTLINE));
-	obs_data_set_bool(settings, S_WORD_WRAP, 
-		obs_data_get_bool(text_ss_settings, S_WORD_WRAP));
-	obs_data_set_int(settings, S_COLOR_1, 
-		obs_data_get_int(text_ss_settings, S_COLOR_1));
-	obs_data_set_int(settings, S_COLOR_2, 
-		obs_data_get_int(text_ss_settings, S_COLOR_2));
-	obs_data_set_int(settings, S_CUSTOM_WIDTH, 
-		obs_data_get_int(text_ss_settings, S_CUSTOM_WIDTH));
-	obs_data_set_bool(settings, S_FROM_FILE, false);
-	obs_data_set_bool(settings, S_LOG_MODE, 
-		obs_data_get_bool(text_ss_settings, S_LOG_MODE));
-	obs_data_set_int(settings, S_LOG_LINES, 
-		obs_data_get_int(text_ss_settings, S_LOG_LINES));
+	obs_data_set_uint32(settings, S_OUTLINE_COLOR, 
+		obs_data_get_uint32(text_ss_settings, S_OUTLINE_COLOR));
+	obs_data_set_uint32(settings, S_OUTLINE_OPACITY, 
+		obs_data_get_uint32(text_ss_settings, S_OUTLINE_OPACITY));
+	obs_data_set_uint32(settings, S_OUTLINE_SIZE, 
+		obs_data_get_uint32(text_ss_settings, S_OUTLINE_SIZE));
+	obs_data_set_bool(settings, S_USE_FILE, false);
+	obs_data_set_string(settings, S_FILE, "");
+	obs_data_set_bool(settings, S_CHATLOG_MODE, 
+		obs_data_get_bool(text_ss_settings, S_CHATLOG_MODE));
+	obs_data_set_int(settings, S_CHATLOG_LINES, 
+		obs_data_get_int(text_ss_settings, S_CHATLOG_LINES));
+	obs_data_set_bool(settings, S_EXTENTS, 
+		obs_data_get_bool(text_ss_settings, S_EXTENTS));
+	obs_data_set_bool(settings, S_EXTENTS_WRAP, 
+		obs_data_get_bool(text_ss_settings, S_EXTENTS_WRAP));
+	obs_data_set_uint32(settings, S_EXTENTS_CX, 
+		obs_data_get_uint32(text_ss_settings, S_EXTENTS_CX));
+	obs_data_set_uint32(settings, S_EXTENTS_CY, 
+		obs_data_get_uint32(text_ss_settings, S_EXTENTS_CY));
+	obs_data_set_int(settings, S_TRANSFORM, 
+		obs_data_get_int(text_ss_settings, S_TRANSFORM));
 	obs_data_set_bool(settings, S_ANTIALIASING, 
 		obs_data_get_bool(text_ss_settings, S_ANTIALIASING));
-	obs_data_set_string(settings, S_TEXT_FILE, "");
-	obs_data_set_string(settings, S_TEXT, text);
-	source = obs_source_create_private("text_ft2_source", NULL, settings);
+
+	/*const char *font_face = obs_data_get_string(font_obj, "face");
+	int font_size = (int)obs_data_get_int(font_obj, "size");
+	int64_t font_flags = obs_data_get_int(font_obj, "flags");*/
+
+	obs_data_set_uint32(settings, S_BKCOLOR, 
+		obs_data_get_uint32(text_ss_settings, S_BKCOLOR));
+	obs_data_set_uint32(settings, S_BKOPACITY, 
+		obs_data_get_uint32(text_ss_settings, S_BKOPACITY));
+
+	source = obs_source_create_private("text_gdiplus", NULL, settings);
 
 	obs_data_release(curr_font);
 	obs_data_release(settings);
@@ -802,25 +884,30 @@ static void ss_defaults(obs_data_t *settings) {
 
 static void text_defaults(obs_data_t *settings) {
 	obs_data_t *font_obj = obs_data_create();
+	obs_data_set_default_string(font_obj, "face", "Arial");
 
-	// Currently only supporting text freetype2
-	const uint16_t font_size = 256;
+	// Only non-obsolete v1 atm
+	obs_data_set_default_int(font_obj, "size", 36);
 
-	obs_data_set_default_string(font_obj, S_FACE, DEFAULT_FACE);
-	obs_data_set_default_int(font_obj, S_SIZE, font_size);
-	obs_data_set_default_int(font_obj, S_FLAGS, 0);
-	obs_data_set_default_string(font_obj, S_STYLE, "");
 	obs_data_set_default_obj(settings, S_FONT, font_obj);
-
+	obs_data_set_default_string(settings, S_ALIGN, S_ALIGN_LEFT);
+	obs_data_set_default_string(settings, S_VALIGN, S_VALIGN_TOP);
+	obs_data_set_default_int(settings, S_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_OPACITY, 100);
+	obs_data_set_default_int(settings, S_GRADIENT_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_GRADIENT_OPACITY, 100);
+	obs_data_set_default_double(settings, S_GRADIENT_DIR, 90.0);
+	obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
+	obs_data_set_default_int(settings, S_BKOPACITY, 0);
+	obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
+	obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
+	obs_data_set_default_int(settings, S_CHATLOG_LINES, 6);
+	obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
+	obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
+	obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
+	obs_data_set_default_int(settings, S_TRANSFORM, S_TRANSFORM_NONE);
 	obs_data_set_default_bool(settings, S_ANTIALIASING, true);
-	obs_data_set_default_bool(settings, S_WORD_WRAP, false);
-	obs_data_set_default_bool(settings, S_OUTLINE, false);
-	obs_data_set_default_bool(settings, S_DROP_SHADOW, false);
-
-	obs_data_set_default_int(settings, S_LOG_LINES, 6);
-
-	obs_data_set_default_int(settings, S_COLOR_1, 0xFFFFFFFF);
-	obs_data_set_default_int(settings, S_COLOR_2, 0xFFFFFFFF);
 
 	obs_data_release(font_obj);
 }
@@ -830,43 +917,141 @@ static void text_ss_defaults(obs_data_t *settings) {
 	text_defaults(settings);
 }
 
-static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
+#define set_vis(var, val, show)                           \
+	do {                                              \
+		p = obs_properties_get(props, val);       \
+		obs_property_set_visible(p, var == show); \
+	} while (false)
 
-#define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
+static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
+			     obs_data_t *s) {
+	bool use_file = obs_data_get_bool(s, S_USE_FILE);
+
+	set_vis(use_file, S_TEXT, false);
+	set_vis(use_file, S_FILE, true);
+	return true;
+}
+
+static bool outline_changed(obs_properties_t *props, obs_property_t *p,
+			    obs_data_t *s) {
+	bool outline = obs_data_get_bool(s, S_OUTLINE);
+
+	set_vis(outline, S_OUTLINE_SIZE, true);
+	set_vis(outline, S_OUTLINE_COLOR, true);
+	set_vis(outline, S_OUTLINE_OPACITY, true);
+	return true;
+}
+
+static bool chatlog_mode_changed(obs_properties_t *props, obs_property_t *p,
+				 obs_data_t *s) {
+	bool chatlog_mode = obs_data_get_bool(s, S_CHATLOG_MODE);
+
+	set_vis(chatlog_mode, S_CHATLOG_LINES, true);
+	return true;
+}
+
+static bool gradient_changed(obs_properties_t *props, obs_property_t *p,
+			     obs_data_t *s) {
+	bool gradient = obs_data_get_bool(s, S_GRADIENT);
+
+	set_vis(gradient, S_GRADIENT_COLOR, true);
+	set_vis(gradient, S_GRADIENT_OPACITY, true);
+	set_vis(gradient, S_GRADIENT_DIR, true);
+	return true;
+}
+
+static bool extents_modified(obs_properties_t *props, obs_property_t *p,
+			     obs_data_t *s) {
+	bool use_extents = obs_data_get_bool(s, S_EXTENTS);
+
+	set_vis(use_extents, S_EXTENTS_WRAP, true);
+	set_vis(use_extents, S_EXTENTS_CX, true);
+	set_vis(use_extents, S_EXTENTS_CY, true);
+	return true;
+}
+
+#undef set_vis
 
 static void text_properties(obs_properties_t *props) {
-	// TODO:
-	//	Scrolling. Can't think of a way to do it with the render
-	//		targets currently being broken. (0.4.2)
-	//	Better/pixel shader outline/drop shadow
-	//	Some way to pull text files from network, I dunno
+
+	obs_property_t *p;
 
 	obs_properties_add_font(props, S_FONT, T_FONT);
 
-	obs_properties_add_bool(props, S_ANTIALIASING,
-				T_ANTIALIASING);
+	obs_properties_add_bool(props, S_ANTIALIASING, T_ANTIALIASING);
 
-	obs_properties_add_bool(props, S_LOG_MODE,
-				T_LOG_MODE);
+	p = obs_properties_add_list(props, S_TRANSFORM, T_TRANSFORM,
+				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, T_TRANSFORM_NONE, S_TRANSFORM_NONE);
+	obs_property_list_add_int(p, T_TRANSFORM_UPPERCASE,
+				  S_TRANSFORM_UPPERCASE);
+	obs_property_list_add_int(p, T_TRANSFORM_LOWERCASE,
+				  S_TRANSFORM_LOWERCASE);
+	obs_property_list_add_int(p, T_TRANSFORM_STARTCASE,
+				  S_TRANSFORM_STARTCASE);
 
-	obs_properties_add_int(props, S_LOG_LINES,
-			       T_LOG_LINES, 1, 1000, 1);
+	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 
-	obs_properties_add_color(props, S_COLOR_1, T_COLOR_1);
+	obs_properties_add_color(props, S_COLOR, T_COLOR);
+	p = obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100,
+					  1);
+	obs_property_int_set_suffix(p, "%");
 
-	obs_properties_add_color(props, S_COLOR_2, T_COLOR_2);
+	p = obs_properties_add_bool(props, S_GRADIENT, T_GRADIENT);
+	obs_property_set_modified_callback(p, gradient_changed);
 
-	obs_properties_add_bool(props, S_OUTLINE, T_OUTLINE);
+	obs_properties_add_color(props, S_GRADIENT_COLOR, T_GRADIENT_COLOR);
+	p = obs_properties_add_int_slider(props, S_GRADIENT_OPACITY,
+					  T_GRADIENT_OPACITY, 0, 100, 1);
+	obs_property_int_set_suffix(p, "%");
+	obs_properties_add_float_slider(props, S_GRADIENT_DIR, T_GRADIENT_DIR,
+					0, 360, 0.1);
 
-	obs_properties_add_bool(props, S_DROP_SHADOW,
-				T_DROP_SHADOW);
+	obs_properties_add_color(props, S_BKCOLOR, T_BKCOLOR);
+	p = obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY, 0,
+					  100, 1);
+	obs_property_int_set_suffix(p, "%");
 
-	obs_properties_add_int(props, S_CUSTOM_WIDTH,
-			       T_CUSTOM_WIDTH, 0, 4096, 1);
+	p = obs_properties_add_list(props, S_ALIGN, T_ALIGN,
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_ALIGN_LEFT, S_ALIGN_LEFT);
+	obs_property_list_add_string(p, T_ALIGN_CENTER, S_ALIGN_CENTER);
+	obs_property_list_add_string(p, T_ALIGN_RIGHT, S_ALIGN_RIGHT);
 
-	obs_properties_add_bool(props, S_WORD_WRAP,
-				T_WORD_WRAP);
+	p = obs_properties_add_list(props, S_VALIGN, T_VALIGN,
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_VALIGN_TOP, S_VALIGN_TOP);
+	obs_property_list_add_string(p, T_VALIGN_CENTER, S_VALIGN_CENTER);
+	obs_property_list_add_string(p, T_VALIGN_BOTTOM, S_VALIGN_BOTTOM);
+
+	p = obs_properties_add_bool(props, S_OUTLINE, T_OUTLINE);
+	obs_property_set_modified_callback(p, outline_changed);
+
+	obs_properties_add_int(props, S_OUTLINE_SIZE, T_OUTLINE_SIZE, 1, 20, 1);
+	obs_properties_add_color(props, S_OUTLINE_COLOR, T_OUTLINE_COLOR);
+	p = obs_properties_add_int_slider(props, S_OUTLINE_OPACITY,
+					  T_OUTLINE_OPACITY, 0, 100, 1);
+	obs_property_int_set_suffix(p, "%");
+
+	p = obs_properties_add_bool(props, S_CHATLOG_MODE, T_CHATLOG_MODE);
+	obs_property_set_modified_callback(p, chatlog_mode_changed);
+
+	obs_properties_add_int(props, S_CHATLOG_LINES, T_CHATLOG_LINES, 1, 1000,
+			       1);
+
+	p = obs_properties_add_bool(props, S_EXTENTS, T_EXTENTS);
+	obs_property_set_modified_callback(p, extents_modified);
+
+	obs_properties_add_int(props, S_EXTENTS_CX, T_EXTENTS_CX, 32, 8000, 1);
+	obs_properties_add_int(props, S_EXTENTS_CY, T_EXTENTS_CY, 32, 8000, 1);
+	obs_properties_add_bool(props, S_EXTENTS_WRAP, T_EXTENTS_WRAP);
 }
+
+static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
+
+#define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
 
 static void ss_properites(obs_properties_t *props) {
 	struct obs_video_info ovi;
@@ -1019,7 +1204,9 @@ static enum obs_media_state ss_get_state(void *data) {
 struct obs_source_info text_gdiplus_slideshow_info = {
 	.id = "text-gdiplus-slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+	.output_flags = 
+			OBS_SOURCE_VIDEO | 
+			OBS_SOURCE_CUSTOM_DRAW |
 			OBS_SOURCE_COMPOSITE | 
 			OBS_SOURCE_CONTROLLABLE_MEDIA,
 	.get_name = text_ss_getname,

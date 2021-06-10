@@ -28,8 +28,7 @@ extern struct obs_source_info text_freetype2_slideshow_info;
 extern struct obs_source_info text_gdiplus_slideshow_info;
 #endif
 
-bool obs_module_load(void)
-{
+bool obs_module_load(void) {
     obs_register_source(&text_freetype2_slideshow_info);
 #ifdef _WIN32
     obs_register_source(&text_gdiplus_slideshow_info);
@@ -38,7 +37,6 @@ bool obs_module_load(void)
     return true;
 }
 
-void obs_module_unload()
-{
+void obs_module_unload() {
     blog(LOG_INFO, "plugin unloaded");
 }
