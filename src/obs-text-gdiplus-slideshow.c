@@ -209,7 +209,7 @@ struct text_slideshow {
 
 static const char *text_ss_getname(void *unused) {
     UNUSED_PARAMETER(unused);
-    return obs_module_text("TextSlideshow");
+    return obs_module_text("TextGdiplusSlideshow");
 }
 
 static void play_pause_hotkey(void *data, obs_hotkey_id id,
@@ -886,8 +886,8 @@ static void text_defaults(obs_data_t *settings) {
 	obs_data_t *font_obj = obs_data_create();
 	obs_data_set_default_string(font_obj, "face", "Arial");
 
-	// Only non-obsolete v1 atm
-	obs_data_set_default_int(font_obj, "size", 36);
+	// Only non-obsolete v2 atm
+	obs_data_set_default_int(font_obj, "size", 256);
 
 	obs_data_set_default_obj(settings, S_FONT, font_obj);
 	obs_data_set_default_string(settings, S_ALIGN, S_ALIGN_LEFT);

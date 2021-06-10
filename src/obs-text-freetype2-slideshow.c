@@ -164,7 +164,7 @@ struct text_slideshow {
 
 static const char *text_ss_getname(void *unused) {
     UNUSED_PARAMETER(unused);
-    return obs_module_text("TextSlideshow");
+    return obs_module_text("TextFreetype2Slideshow");
 }
 
 static void play_pause_hotkey(void *data, obs_hotkey_id id,
