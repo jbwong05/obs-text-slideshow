@@ -11,3 +11,4 @@
 
 # ignore generated files
 *.generated.*
+package

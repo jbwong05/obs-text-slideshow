@@ -882,6 +882,10 @@ static void ss_properites(obs_properties_t *props) {
 
 	/* ----------------- */
 
+	obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
+					 OBS_EDITABLE_LIST_TYPE_STRINGS,
+					 NULL, NULL);
+
 	p = obs_properties_add_list(props, S_BEHAVIOR, T_BEHAVIOR,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
@@ -924,10 +928,6 @@ static void ss_properites(obs_properties_t *props) {
 	char str[32];
 	snprintf(str, 32, "%dx%d", cx, cy);
 	obs_property_list_add_string(p, str, str);
-
-	obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
-					 OBS_EDITABLE_LIST_TYPE_STRINGS,
-					 NULL, NULL);
 }
 
 static obs_properties_t *text_ss_properties(void *data) {
