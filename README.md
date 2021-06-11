@@ -6,7 +6,7 @@
 Inspired by the built in [image slideshow](https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/obs-slideshow.c), except for text sources instead. Both Free Type 2 and GDI+ are supported. Useful for displaying song lyrics, captions, etc.
 
 ## Installation
-Installers for Windows, macOS and Linux coming soon!
+Installers can be found in the [Releases](https://github.com/jbwong05/obs-text-slideshow/releases) section.
 
 ## Building from Source
 
