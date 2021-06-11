@@ -57,7 +57,8 @@ configure_file(
 
 set(PLUGIN_SOURCES
 	src/plugin-main.c
-    src/obs-text-freetype2-slideshow.c)
+    src/obs-text-freetype2-slideshow.c
+    src/obs-text-slideshow.c)
 
 if(WIN32)
     set(PLUGIN_SOURCES 
@@ -66,7 +67,8 @@ if(WIN32)
 endif()
 
 set(PLUGIN_HEADERS
-	src/plugin-macros.generated.h)
+	src/plugin-macros.generated.h
+    src/obs-text-slideshow.h)
 
 # --- Platform-independent build settings ---
 add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
