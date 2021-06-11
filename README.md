@@ -1,61 +1,63 @@
-# OBS Plugin Template
+# obs-text-slideshow
 
-## Introduction
+Inspired by the built in [image slideshow](https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/obs-slideshow.c), except for text sources instead. Both Free Type 2 and GDI+ are supported. Useful for displaying song lyrics, captions, etc.
 
-This plugin is meant to make it easy to quickstart development of new OBS plugins. It includes:
+## Installation
+Installers for Windows, macOS and Linux coming soon!
 
-- The CMake project file
-- Boilerplate plugin source code
-- A continuous-integration configuration for automated builds (a.k.a Build Bot)
+## Building from Source
 
-## Configuring
+### Prerequisites
+You'll need CMake and a minimal working development environment for OBS Studio installed on your computer. Only Qt and the standard `obs dependencies`(https://github.com/obsproject/obs-deps) are required. obs can be built with the `-DDISABLE_PLUGINS=true` flag which is sufficient. More specific details can be found [here](https://github.com/obsproject/obs-studio/wiki/Install-Instructions#windows-build-directions).
 
-Open `CMakeLists.txt` and edit the following lines at the beginning:
+### Windows
+#### Building with cmake-gui
+In cmake-gui, you'll have to set these CMake variables:
+- **QTDIR** (path) : location of the Qt environment suited for your compiler and architecture
+- **LIBOBS_INCLUDE_DIR** (path) : location of the `libobs` subfolder in the source code of OBS Studio
+- **LIBOBS_LIB** (filepath) : location of the obs.lib file
+- **OBS_FRONTEND_LIB** (filepath) : location of the obs-frontend-api.lib file
+- **LibObs_DIR** (filepath) : location of `libobs` folder within the obs build directory
 
-```cmake
-# Change `obs-plugintemplate` to your plugin's name in a machine-readable format
-# (e.g.: obs-myawesomeplugin) and set the value next to `VERSION` as your plugin's current version
-project(obs-plugintemplate VERSION 1.0.0)
-
-# Replace `Your Name Here` with the name (yours or your organization's) you want
-# to see as the author of the plugin (in the plugin's metadata itself and in the installers)
-set(PLUGIN_AUTHOR "Your Name Here")
-
-# Replace `com.example.obs-plugin-template` with a unique Bundle ID for macOS releases
-# (used both in the installer and when submitting the installer for notarization)
-set(MACOS_BUNDLEID "com.example.obs-plugintemplate")
-
-# Replace `me@contoso.com` with the maintainer email address you want to put in Linux packages
-set(LINUX_MAINTAINER_EMAIL "me@contoso.com")
+#### Building from Command Line
+```
+git clone https://github.com/jbwong05/obs-text-slideshow.git
+cd obs-text-slideshow
+mkdir build && cd build
+# Windows 64-bit
+cmake -G"Visual Studio 16 2019" -A"x64" -DCMAKE_SYSTEM_VERSION="10.0.18363.657" -DQTDIR=<path to 64-bit Qt dir> -DLibObs_DIR=<path to libobs folder within obs build dir> -DLIBOBS_INCLUDE_DIR=<path to the libobs sub-folder in obs-studio's source code> -DLIBOBS_LIB=<path to obs.lib> -DOBS_FRONTEND_LIB=<path to obs-frontend-api.lib> ..
+# or Windows 32-bit
+cmake -G"Visual Studio 16 2019" -A"Win32" -DCMAKE_SYSTEM_VERSION="10.0.18363.657" -DQTDIR=<path to 32-bit Qt dir> -DLibObs_DIR=<path to libobs folder within obs build dir> -DLIBOBS_INCLUDE_DIR=<path to the libobs sub-folder in obs-studio's source code>  -DLIBOBS_LIB=<path to obs.lib> -DOBS_FRONTEND_LIB=<path to obs-frontend-api.lib> ..
+# Open `obs-text-slideshow.sln` with Visual Studio and build
+# Copy `obs-text-slideshow.dll` and `obs-text-slideshow.pdb` to the obs plugin directory
+# Create a obs-text-slideshow folder in the obs data directory and copy the locale folder into the new obs-text-slideshow directory
 ```
 
-## CI / Build Bot
+### Linux
+```
+git clone https://github.com/jbwong05/obs-text-slideshow.git
+cd obs-text-slideshow
+mkdir build && cd build
+# If you are on Ubuntu, add the `-DBUILD_UBUNTU_FIX=true` flag to your cmake command
+cmake ..
+# If dependencies are not on your path, you can manually specify their paths with the following:
+cmake -DQTDIR=<path to Qt dir> -DLIBOBS_INCLUDE_DIR=<path to the libobs sub-folder in obs-studio's source code> -DLIBOBS_LIB=<path to libobs.so> -DOBS_FRONTEND_LIB=<path to libobs-frontend-api.so> ..
+make
+sudo make install
+```
 
-The CI scripts are made for Azure Pipelines. The sections below detail some of the common tasks possible with that CI configuration.
+### OS X
+```
+git clone https://github.com/jbwong05/obs-text-slideshow.git
+cd obs-text-slideshow
+mkdir build && cd build
+cmake -DLIBOBS_INCLUDE_DIR=<path to the libobs sub-folder in obs-studio's source code> -DLIBOBS_LIB=<path to libobs.0.dylib> -DOBS_FRONTEND_LIB=<path to libobs-frontend-api.dylib> -DQTDIR=<path to Qt dir> ..
+make
+# Copy libobs-text-slideshow.so to the obs-plugins folder
+# Create a obs-text-slideshow folder in the obs data directory and copy the locale folder into the new obs-text-slideshow directory
+```
 
-### Retrieving build artifacts
-
-Each build produces installers and packages that you can use for testing and releases. These artifacts can be found a Build's page on Azure Pipelines.
-
-#### Building a Release
-
-Simply create and push a tag, and Azure Pipelines will run the pipeline in Release Mode. This mode uses the tag as its version number instead of the git ref in normal mode.
-
-### Signing and Notarizing on macOS
-
-On macOS, Release Mode builds will be signed and sent to Apple for notarization if `macosSignAndNotarize` is set to `True` at the top of the `azure-pipelines.yml` file. **You'll need a paid Apple Developer Account for this.**
-
-In addition to enabling `macosSignAndNotarize`, you'll need to setup a few more things for Signing and Notarizing to work:
-
-- On your Apple Developer dashboard, go to "Certificates, IDs & Profiles" and create two signing certificates:
-    - One of the "Developer ID Application" type. It will be used to sign the plugin's binaries
-    - One of the "Developer ID Installer" type. It will be used to sign the plugin's installer
-- Using the Keychain app on macOS, export these two certificates and keys into a .p12 file **protected with a strong password**
-- Add that `Certificates.P12` file as a [Secure File in Azure Pipelines](https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops) and make sure it is named `Certificates.p12`
-- Add the following secrets in your pipeline settings:
-    - `secrets.macOS.certificatesImportPassword`: Password of the .p12 file generated earlier
-    - `secrets.macOS.codeSigningIdentity`: Name of the "Developer ID Application" signing certificate generated earlier
-    - `secrets.macOS.installerSigningIdentity`: Name of "Developer ID Installer" signing certificate generated earlier
-    - `secrets.macOS.notarization.username`: Your Apple Developer Account's username
-    - `secrets.macOS.notarization.password`: Your Apple Developer Account's password
-    - `secrets.macOS.notarization.providerShortName`: Identifier (`Provider Short Name`, as Apple calls it) of the Developer Team to which the signing certificates belong. 
+## Possible future work
+- [ ] Text input from files
+- [ ] Individual text settings for each text source
+- [ ] GUI dock for easier transitioning between sources
