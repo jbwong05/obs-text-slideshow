@@ -108,17 +108,13 @@ void next_slide_hotkey(void *data, obs_hotkey_id id,
 	obs_hotkey_t *hotkey, bool pressed);
 void previous_slide_hotkey(void *data, obs_hotkey_id id,
 	obs_hotkey_t *hotkey, bool pressed);
-void free_text_srcs(struct darray *array);
 void text_ss_destroy(void *data);
 void *text_ss_create(obs_data_t *settings, obs_source_t *source);
-void set_media_state(void *data, enum obs_media_state state);
-void do_transition(void *data, bool to_null);
-obs_source_t *get_source(struct darray *array, const char *text);
-void free_text_src(struct darray *array);
-size_t random_text_src(struct text_slideshow *text_ss);
+void text_ss_update(void *data, obs_data_t *settings,
+	obs_source_t *(* create_source)(const char *text, 
+		obs_data_t *text_ss_settings));
 void text_ss_activate(void *data);
 void text_ss_deactivate(void *data);
-obs_source_t *get_transition(struct text_slideshow *text_ss);
 void text_ss_video_render(void *data, gs_effect_t *effect);
 void text_ss_video_tick(void *data, float seconds);
 bool text_ss_audio_render(void *data, uint64_t *ts_out,
