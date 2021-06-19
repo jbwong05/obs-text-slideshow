@@ -41,7 +41,7 @@ cmake -G"Visual Studio 16 2019" -A"Win32" -DCMAKE_SYSTEM_VERSION="10.0.18363.657
 git clone https://github.com/jbwong05/obs-text-slideshow.git
 cd obs-text-slideshow
 mkdir build && cd build
-# If you are on Ubuntu, add the `-DBUILD_UBUNTU_FIX=true` flag to your cmake command
+# If you are on Ubuntu, add the `-DBUILD_UBUNTU=true` flag to your cmake command
 cmake ..
 # If dependencies are not on your path, you can manually specify their paths with the following:
 cmake -DQTDIR=<path to Qt dir> -DLIBOBS_INCLUDE_DIR=<path to the libobs sub-folder in obs-studio's source code> -DLIBOBS_LIB=<path to libobs.so> -DOBS_FRONTEND_LIB=<path to libobs-frontend-api.so> ..
