@@ -17,8 +17,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 #include <obs-module.h>
+#include <obs-frontend-api.h>
+#include <QMainWindow>
 
 #include "plugin-macros.generated.h"
+#include "obs-text-slideshow-dock.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
@@ -33,6 +36,14 @@ bool obs_module_load(void) {
 #ifdef _WIN32
     obs_register_source(&text_gdiplus_slideshow_info);
 #endif
+
+    const auto main_window =
+		static_cast<QMainWindow *>(obs_frontend_get_main_window());
+	obs_frontend_push_ui_translation(obs_module_get_string);
+	auto *tmp = new TextSlideshowDock(main_window);
+	obs_frontend_add_dock(tmp);
+	obs_frontend_pop_ui_translation();
+
     blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
     return true;
 }

@@ -56,9 +56,10 @@ configure_file(
 )
 
 set(PLUGIN_SOURCES
-	src/plugin-main.c
+	src/plugin-main.cpp
     src/obs-text-freetype2-slideshow.c
-    src/obs-text-slideshow.c)
+    src/obs-text-slideshow.c
+    src/obs-text-slideshow-dock.cpp)
 
 if(WIN32)
     set(PLUGIN_SOURCES 
@@ -68,10 +69,13 @@ endif()
 
 set(PLUGIN_HEADERS
 	src/plugin-macros.generated.h
-    src/obs-text-slideshow.h)
+    src/obs-text-slideshow.h
+    src/obs-text-slideshow-dock.h)
+
+qt5_wrap_ui(PLUGIN_UI_HEADERS src/obs-text-slideshow-dock.ui)
 
 # --- Platform-independent build settings ---
-add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
+add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS} ${PLUGIN_UI_HEADERS})
 
 include_directories(
 	"${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api"
