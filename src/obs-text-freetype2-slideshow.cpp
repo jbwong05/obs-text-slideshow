@@ -171,7 +171,7 @@ static void text_properties(obs_properties_t *props) {
 
 static obs_properties_t *freetype2_properties(void *data) {
 	obs_properties_t *props = obs_properties_create();
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	
 	ss_properites(props);
 	text_properties(props);
@@ -191,18 +191,17 @@ struct obs_source_info text_freetype2_slideshow_info = {
 	.get_name = freetype2_getname,
 	.create = text_ss_create,
 	.destroy = text_ss_destroy,
-	.update = freetype2_update,
-	.activate = text_ss_activate,
-	.deactivate = text_ss_deactivate,
-	.video_render = text_ss_video_render,
-	.video_tick = text_ss_video_tick,
-	.audio_render = text_ss_audio_render,
-	.enum_active_sources = text_ss_enum_sources,
-	.enum_all_sources = text_ss_enum_all_sources,
 	.get_width = text_ss_width,
 	.get_height = text_ss_height,
 	.get_defaults = freetype2_defaults,
 	.get_properties = freetype2_properties,
+	.update = freetype2_update,
+	.activate = text_ss_activate,
+	.deactivate = text_ss_deactivate,
+	.video_tick = text_ss_video_tick,
+	.video_render = text_ss_video_render,
+	.enum_active_sources = text_ss_enum_sources,
+	.audio_render = text_ss_audio_render,
 	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
 	.media_play_pause = text_ss_play_pause,
 	.media_restart = text_ss_restart,

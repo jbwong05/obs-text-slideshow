@@ -122,7 +122,11 @@ void TextSlideshowDock::updateSources() {
 
 void TextSlideshowDock::updateTexts() {
     texts.clear();
-    obs_source_enum_full_tree(active_slideshow.source, enumChildSources, &texts);
+    proc_handler_t *handler = obs_source_get_proc_handler(active_slideshow.source);
+    calldata_t cd = {0};
+    calldata_set_ptr(&cd, "texts", &texts);
+    proc_handler_call(handler, "get_texts", &cd);
+    calldata_free(&cd);
 
     ui->textList->clear();
     for(int i = 0; i < texts.size(); i++) {

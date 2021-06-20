@@ -57,8 +57,8 @@ configure_file(
 
 set(PLUGIN_SOURCES
 	src/plugin-main.cpp
-    src/obs-text-freetype2-slideshow.c
-    src/obs-text-slideshow.c
+    src/obs-text-freetype2-slideshow.cpp
+    src/obs-text-slideshow.cpp
     src/obs-text-slideshow-dock.cpp)
 
 if(WIN32)
