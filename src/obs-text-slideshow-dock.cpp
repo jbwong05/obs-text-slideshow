@@ -75,8 +75,13 @@ void TextSlideshowDock::changeActiveSource(int index) {
 }
 
 void TextSlideshowDock::setActiveSource(int index) {
-    active_slideshow.source = text_slideshows[index];
-    active_slideshow.index = index;
+    if(index >= 0 && index < text_slideshows.size()) {
+        active_slideshow.source = text_slideshows[index];
+        active_slideshow.index = index;
+    } else {
+        active_slideshow.source = NULL;
+        active_slideshow.index = -1;
+    }
 }
 
 void TextSlideshowDock::chooseNewActiveSource() {
@@ -137,15 +142,24 @@ void TextSlideshowDock::refresh() {
     }
 }
 
+void TextSlideshowDock::transition(int index) {
+    if(index >= 0) {
+        
+    }
+}
+
 TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 	: QDockWidget(parent),
 	  ui(new Ui::TextSlideshowDock) {
 	ui->setupUi(this);
+    setActiveSource(-1);
 
     connect(ui->sourceBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
         this, &TextSlideshowDock::changeActiveSource);
     connect(ui->refreshButton, &QPushButton::released, this, 
         &TextSlideshowDock::refresh);
+    connect(ui->textList, &QListWidget::currentRowChanged, this,
+        &TextSlideshowDock::transition);
 
 	obs_frontend_add_event_callback(OBSFrontendEventWrapper, this);
 
