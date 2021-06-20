@@ -26,7 +26,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "ui_obs-text-slideshow-dock.h"
 
 using std::vector;
-using std::pair;
 
 struct slideshow_t {
     obs_source_t *source;

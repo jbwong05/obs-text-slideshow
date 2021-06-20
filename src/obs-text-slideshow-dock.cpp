@@ -46,14 +46,6 @@ static bool findTextSlideshowSources(obs_scene_t *scene,
     return true;
 }
 
-static void enumChildSources(obs_source_t *parent,
-	    obs_source_t *child, void *param) {
-    vector<const char *> *texts = reinterpret_cast<vector<const char *> *>(param);
-    const char *text = obs_source_get_name(child);
-    texts->push_back(text);
-}
-
-
 void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event) {
 	switch(event) {
         case OBS_FRONTEND_EVENT_FINISHED_LOADING:
