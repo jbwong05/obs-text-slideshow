@@ -151,4 +151,4 @@ void text_ss_restart(void *data);
 void text_ss_stop(void *data);
 void text_ss_next_slide(void *data);
 void text_ss_previous_slide(void *data);
-enum obs_media_state ss_get_state(void *data);
+enum obs_media_state text_ss_get_state(void *data);

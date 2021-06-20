@@ -799,7 +799,7 @@ void text_ss_previous_slide(void *data) {
 	do_transition(text_ss, false);
 }
 
-enum obs_media_state ss_get_state(void *data) {
+enum obs_media_state text_ss_get_state(void *data) {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 	return text_ss->state;
 }
