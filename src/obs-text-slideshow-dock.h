@@ -41,6 +41,9 @@ class TextSlideshowDock : public QDockWidget {
             void *ptr);
         void OBSFrontendEvent(enum obs_frontend_event event);
         void changeActiveSource(int index);
+        void setActiveSource(int index);
+        void chooseNewActiveSource();
+        void updateSources();
         void updateTexts();
 
         std::unique_ptr<Ui::TextSlideshowDock> ui;
