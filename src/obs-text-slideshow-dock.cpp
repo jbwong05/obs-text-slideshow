@@ -60,16 +60,7 @@ void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event) {
 	switch(event) {
         case OBS_FRONTEND_EVENT_FINISHED_LOADING:
         case OBS_FRONTEND_EVENT_SCENE_CHANGED:
-            updateSources();
-            
-            if(text_slideshows.size() == 0) {
-                ui->sourceBox->addItem("No Text Slide Show sources found on current scene");
-                ui->textList->clear();
-            } else {
-                chooseNewActiveSource();
-                updateTexts();
-            }
-
+            refresh();
             break;
         default:
             break;
@@ -134,6 +125,18 @@ void TextSlideshowDock::updateTexts() {
     }
 }
 
+void TextSlideshowDock::refresh() {
+    updateSources();
+            
+    if(text_slideshows.size() == 0) {
+        ui->sourceBox->addItem("No Text Slide Show sources found on current scene");
+        ui->textList->clear();
+    } else {
+        chooseNewActiveSource();
+        updateTexts();
+    }
+}
+
 TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 	: QDockWidget(parent),
 	  ui(new Ui::TextSlideshowDock) {
@@ -141,6 +144,8 @@ TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 
     connect(ui->sourceBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
         this, &TextSlideshowDock::changeActiveSource);
+    connect(ui->refreshButton, &QPushButton::released, this, 
+        &TextSlideshowDock::refresh);
 
 	obs_frontend_add_event_callback(OBSFrontendEventWrapper, this);
 
