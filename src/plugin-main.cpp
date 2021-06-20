@@ -28,13 +28,13 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
 extern void load_text_freetype2_slideshow();
 #ifdef _WIN32
-extern struct obs_source_info text_gdiplus_slideshow_info;
+extern void load_text_gdiplus_slideshow();
 #endif
 
 bool obs_module_load(void) {
     load_text_freetype2_slideshow();
 #ifdef _WIN32
-    obs_register_source(&text_gdiplus_slideshow_info);
+    load_text_gdiplus_slideshow();
 #endif
 
     const auto main_window =

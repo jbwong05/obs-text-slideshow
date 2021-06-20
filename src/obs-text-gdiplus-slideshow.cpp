@@ -354,7 +354,7 @@ static void text_properties(obs_properties_t *props) {
 
 static obs_properties_t *gdiplus_properties(void *data) {
 	obs_properties_t *props = obs_properties_create();
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	
 	ss_properites(props);
 	text_properties(props);
@@ -362,33 +362,35 @@ static obs_properties_t *gdiplus_properties(void *data) {
 	return props;
 }
 
-struct obs_source_info text_gdiplus_slideshow_info = {
-	.id = "text-gdiplus-slideshow",
-	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = 
-			OBS_SOURCE_VIDEO | 
+void load_text_gdiplus_slideshow() {
+	obs_source_info info = {};
+	info.id = "text-gdiplus-slideshow";
+	info.type = OBS_SOURCE_TYPE_INPUT;
+	info.output_flags = OBS_SOURCE_VIDEO | 
 			OBS_SOURCE_CUSTOM_DRAW |
 			OBS_SOURCE_COMPOSITE | 
-			OBS_SOURCE_CONTROLLABLE_MEDIA,
-	.get_name = gdiplus_getname,
-	.create = text_ss_create,
-	.destroy = text_ss_destroy,
-	.get_width = text_ss_width,
-	.get_height = text_ss_height,
-	.get_defaults = gdiplus_defaults,
-	.get_properties = gdiplus_properties,
-	.update = gdiplus_update,
-	.activate = text_ss_activate,
-	.deactivate = text_ss_deactivate,
-	.video_tick = text_ss_video_tick,
-	.video_render = text_ss_video_render,
-	.enum_active_sources = text_ss_enum_sources,
-	.audio_render = text_ss_audio_render,
-	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
-	.media_play_pause = text_ss_play_pause,
-	.media_restart = text_ss_restart,
-	.media_stop = text_ss_stop,
-	.media_next = text_ss_next_slide,
-	.media_previous = text_ss_previous_slide,
-	.media_get_state = ss_get_state,
-};
+			OBS_SOURCE_CONTROLLABLE_MEDIA;
+	info.get_properties = gdiplus_properties;
+	info.icon_type = OBS_ICON_TYPE_SLIDESHOW;
+	info.get_name = gdiplus_getname;
+	info.create = text_ss_create;
+	info.destroy = text_ss_destroy;
+	info.get_width = text_ss_width;
+	info.get_height = text_ss_height;
+	info.get_defaults = gdiplus_defaults;
+	info.update = gdiplus_update;
+	info.activate = text_ss_activate;
+	info.deactivate = text_ss_deactivate;
+	info.video_tick = text_ss_video_tick;
+	info.video_render = text_ss_video_render;
+	info.enum_active_sources = text_ss_enum_sources;
+	info.audio_render = text_ss_audio_render;
+	info.media_play_pause = text_ss_play_pause;
+	info.media_restart = text_ss_restart;
+	info.media_stop = text_ss_stop;
+	info.media_next = text_ss_next_slide;
+	info.media_previous = text_ss_previous_slide;
+	info.media_get_state = text_ss_get_state;
+
+	obs_register_source(&info);
+}

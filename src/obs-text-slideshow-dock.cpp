@@ -55,8 +55,6 @@ static void enumChildSources(obs_source_t *parent,
 
 
 void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event) {
-	const char *name;
-
 	switch(event) {
         case OBS_FRONTEND_EVENT_FINISHED_LOADING:
         case OBS_FRONTEND_EVENT_SCENE_CHANGED:

@@ -64,7 +64,7 @@ set(PLUGIN_SOURCES
 if(WIN32)
     set(PLUGIN_SOURCES 
         ${PLUGIN_SOURCES} 
-        src/obs-text-gdiplus-slideshow.c)
+        src/obs-text-gdiplus-slideshow.cpp)
 endif()
 
 set(PLUGIN_HEADERS
