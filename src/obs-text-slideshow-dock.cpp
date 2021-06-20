@@ -152,6 +152,7 @@ void TextSlideshowDock::transition(int index) {
         calldata_t cd = {0};
         calldata_set_int(&cd, "index", index);
         proc_handler_call(handler, "dock_transition", &cd);
+        calldata_free(&cd);
     }
 }
 
