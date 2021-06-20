@@ -160,6 +160,54 @@ void text_ss_destroy(void *data) {
 	bfree(text_ss);
 }
 
+static inline bool item_valid(struct text_slideshow *text_ss) {
+	return text_ss->text_srcs.num && 
+		text_ss->cur_item < text_ss->text_srcs.num;
+}
+
+static void set_media_state(void *data, enum obs_media_state state) {
+	struct text_slideshow *text_ss = data;
+	text_ss->state = state;
+}
+
+static void do_transition(void *data, bool to_null) {
+	struct text_slideshow *text_ss = data;
+	bool valid = item_valid(text_ss);
+
+	if (valid && text_ss->use_cut) {
+		obs_transition_set(text_ss->transition,
+				   text_ss->text_srcs.array[text_ss->cur_item].source);
+
+	} else if (valid && !to_null) {
+		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
+				     text_ss->tr_speed,
+				     text_ss->text_srcs.array[text_ss->cur_item].source);
+
+	} else {
+		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
+				     text_ss->tr_speed, NULL);
+		set_media_state(text_ss, OBS_MEDIA_STATE_ENDED);
+		obs_source_media_ended(text_ss->source);
+	}
+}
+
+static void dock_transition(void *data, calldata_t *cd) {
+	int index = (int)calldata_int(cd, "index");
+
+	struct text_slideshow *text_ss = data;
+
+	if (!text_ss->text_srcs.num || 
+			obs_transition_get_time(text_ss->transition) < 1.0f)
+		return;
+
+	if (index >= text_ss->text_srcs.num)
+		text_ss->cur_item = 0;
+	else 
+		text_ss->cur_item = index;
+
+	do_transition(text_ss, false);
+}
+
 void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 	struct text_slideshow *text_ss = bzalloc(sizeof(*text_ss));
 
@@ -190,6 +238,10 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 		obs_module_text("SlideShow.PreviousSlide"),
 		previous_slide_hotkey, text_ss);
 
+	proc_handler_t *handler = obs_source_get_proc_handler(source);
+	proc_handler_add(handler, "void dock_transition(int index)", 
+		dock_transition, text_ss);
+
 	pthread_mutex_init_value(&text_ss->mutex);
 	if (pthread_mutex_init(&text_ss->mutex, NULL) != 0) {
 		text_ss_destroy(text_ss);
@@ -200,37 +252,6 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 
 	UNUSED_PARAMETER(settings);
 	return text_ss;
-}
-
-static inline bool item_valid(struct text_slideshow *text_ss) {
-	return text_ss->text_srcs.num && 
-		text_ss->cur_item < text_ss->text_srcs.num;
-}
-
-static void set_media_state(void *data, enum obs_media_state state) {
-	struct text_slideshow *text_ss = data;
-	text_ss->state = state;
-}
-
-static void do_transition(void *data, bool to_null) {
-	struct text_slideshow *text_ss = data;
-	bool valid = item_valid(text_ss);
-
-	if (valid && text_ss->use_cut) {
-		obs_transition_set(text_ss->transition,
-				   text_ss->text_srcs.array[text_ss->cur_item].source);
-
-	} else if (valid && !to_null) {
-		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
-				     text_ss->tr_speed,
-				     text_ss->text_srcs.array[text_ss->cur_item].source);
-
-	} else {
-		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
-				     text_ss->tr_speed, NULL);
-		set_media_state(text_ss, OBS_MEDIA_STATE_ENDED);
-		obs_source_media_ended(text_ss->source);
-	}
 }
 
 static void free_text_src(struct darray *array) {

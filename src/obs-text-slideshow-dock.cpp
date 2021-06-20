@@ -144,7 +144,10 @@ void TextSlideshowDock::refresh() {
 
 void TextSlideshowDock::transition(int index) {
     if(index >= 0) {
-        
+        proc_handler_t *handler = obs_source_get_proc_handler(active_slideshow.source);
+        calldata_t cd = {0};
+        calldata_set_int(&cd, "index", index);
+        proc_handler_call(handler, "dock_transition", &cd);
     }
 }
 
