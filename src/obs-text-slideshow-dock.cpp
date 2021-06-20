@@ -24,42 +24,108 @@ void TextSlideshowDock::OBSFrontendEventWrapper(enum obs_frontend_event event,
 	dock->OBSFrontendEvent(event);
 }
 
+static bool findTextSlideshowSources(obs_scene_t *scene, 
+        obs_sceneitem_t *item, void *param) {
+    
+    obs_source_t *source = NULL;
+    source = obs_sceneitem_get_source(item);
+
+    if(source) {
+        const char *id = obs_source_get_id(source);
+
+        if(strcmp(id, "text-freetype2-slideshow") == 0
+#ifdef _WIN32
+            || strcmp(id, "text-gdiplus-slideshow") == 0
+#endif
+        ) {
+            vector<obs_source_t *> *text_slideshows = reinterpret_cast<vector<obs_source_t *> *>(param);
+            text_slideshows->push_back(source);
+        }
+    }
+
+    return true;
+}
+
+static void enumChildSources(obs_source_t *parent,
+	    obs_source_t *child, void *param) {
+    vector<const char *> *texts = reinterpret_cast<vector<const char *> *>(param);
+    const char *text = obs_source_get_name(child);
+    texts->push_back(text);
+}
+
+
 void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event) {
-	obs_source_t *scene = NULL;
+	obs_source_t *scene_source = NULL;
+    obs_scene_t *scene = NULL;
 	const char *name;
 
 	switch (event) {
         case OBS_FRONTEND_EVENT_SCENE_CHANGED:
-            /*if (ui->targetButton_program->isChecked())
-                scene = obs_frontend_get_current_scene();*/
-            break;
-        case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
-            /*if (ui->targetButton_preview->isChecked())
-                scene = obs_frontend_get_current_preview_scene();*/
+            ui->sourceBox->clear();
+            text_slideshows.clear();
+
+            scene_source = obs_frontend_get_current_scene();
+            scene = obs_scene_from_source(scene_source);
+            obs_scene_enum_items(scene, findTextSlideshowSources, &text_slideshows);
+
+            for(int i = 0; i < text_slideshows.size(); i++) {
+                const char *name = obs_source_get_name(text_slideshows[i]);
+                ui->sourceBox->addItem(name);
+            }
+
+            if(text_slideshows.size() == 0) {
+                ui->sourceBox->addItem("No Text Slide Show sources found on current scene");
+            } else {
+                active_slideshow.source = NULL;
+                // Find first that is not hidden
+                for(int i = 0; i < text_slideshows.size() && !active_slideshow.source; i++) {
+                    if(!obs_source_is_hidden(text_slideshows[i])) {
+                        active_slideshow.source = text_slideshows[i];
+                        active_slideshow.index = i;
+                    }
+                }
+
+                // Default to first if all hidden
+                if(!active_slideshow.source) {
+                    active_slideshow.source = text_slideshows[0];
+                    active_slideshow.index = 0;
+                }
+
+                updateTexts();
+            }
+
             break;
         default:
             break;
 	}
 
-	if (!scene)
-		return;
+    if(scene_source) {
+        obs_source_release(scene_source);
+    }
+}
 
-	/*name = obs_source_get_name(scene);
-	for (unsigned long int i = 0; i < PTZDevice::device_count(); i++) {
-		PTZDevice *ptz = PTZDevice::get_device(i);
-		if (ptz->objectName() == name) {
-			setCurrent(i);
-			break;
-		}
-	}*/
+void TextSlideshowDock::changeActiveSource(int index) {
 
-	//obs_source_release(scene);
+}
+
+void TextSlideshowDock::updateTexts() {
+    texts.clear();
+    obs_source_enum_full_tree(active_slideshow.source, enumChildSources, &texts);
+
+    ui->textList->clear();
+    for(int i = 0; i < texts.size(); i++) {
+        ui->textList->addItem(texts[i]);
+    }
 }
 
 TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 	: QDockWidget(parent),
 	  ui(new Ui::TextSlideshowDock) {
 	ui->setupUi(this);
+
+    connect(ui->sourceBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+        this, &TextSlideshowDock::changeActiveSource);
+
 	/*ui->cameraList->setModel(PTZDevice::model());
 
 	QItemSelectionModel *selectionModel = ui->cameraList->selectionModel();

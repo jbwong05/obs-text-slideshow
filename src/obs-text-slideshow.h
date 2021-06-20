@@ -140,6 +140,8 @@ bool text_ss_audio_render(void *data, uint64_t *ts_out,
     size_t channels, size_t sample_rate);
 void text_ss_enum_sources(void *data, 
 	obs_source_enum_proc_t cb, void *param);
+void text_ss_enum_all_sources(void *data,
+	obs_source_enum_proc_t callback, void *param);
 uint32_t text_ss_width(void *data);
 uint32_t text_ss_height(void *data);
 void ss_defaults(obs_data_t *settings);

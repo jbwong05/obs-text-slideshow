@@ -173,7 +173,7 @@ static obs_source_t *create_gdiplus(const char *text, obs_data_t *text_ss_settin
 	obs_data_set_uint32(settings, S_BKOPACITY, 
 		obs_data_get_uint32(text_ss_settings, S_BKOPACITY));
 
-	source = obs_source_create_private("text_gdiplus", NULL, settings);
+	source = obs_source_create_private("text_gdiplus", text, settings);
 
 	obs_data_release(curr_font);
 	obs_data_release(settings);
@@ -380,6 +380,7 @@ struct obs_source_info text_gdiplus_slideshow_info = {
 	.video_tick = text_ss_video_tick,
 	.audio_render = text_ss_audio_render,
 	.enum_active_sources = text_ss_enum_sources,
+	.enum_all_sources = text_ss_enum_all_sources,
 	.get_width = text_ss_width,
 	.get_height = text_ss_height,
 	.get_defaults = gdiplus_defaults,

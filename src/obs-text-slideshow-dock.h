@@ -21,17 +21,32 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <obs-frontend-api.h>
 #include <QDockWidget>
 #include <memory>
+#include <vector>
 
 #include "ui_obs-text-slideshow-dock.h"
+
+using std::vector;
+using std::pair;
+
+struct slideshow_t {
+    obs_source_t *source;
+    int index;
+};
 
 class TextSlideshowDock : public QDockWidget {
     Q_OBJECT
 
     private:
-        static void OBSFrontendEventWrapper(enum obs_frontend_event event, void *ptr);
+        static void OBSFrontendEventWrapper(enum obs_frontend_event event, 
+            void *ptr);
         void OBSFrontendEvent(enum obs_frontend_event event);
+        void changeActiveSource(int index);
+        void updateTexts();
 
         std::unique_ptr<Ui::TextSlideshowDock> ui;
+        vector<obs_source_t *> text_slideshows;
+        vector<const char *> texts;
+        struct slideshow_t active_slideshow;
 
     public:
         TextSlideshowDock(QWidget *parent = nullptr);

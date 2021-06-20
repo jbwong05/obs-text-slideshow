@@ -93,7 +93,7 @@ static obs_source_t *create_freetype2(const char *text, obs_data_t *text_ss_sett
 		obs_data_get_bool(text_ss_settings, S_ANTIALIASING));
 	obs_data_set_string(settings, S_TEXT_FILE, "");
 	obs_data_set_string(settings, S_TEXT, text);
-	source = obs_source_create_private("text_ft2_source", NULL, settings);
+	source = obs_source_create_private("text_ft2_source", text, settings);
 
 	obs_data_release(curr_font);
 	obs_data_release(settings);
@@ -198,6 +198,7 @@ struct obs_source_info text_freetype2_slideshow_info = {
 	.video_tick = text_ss_video_tick,
 	.audio_render = text_ss_audio_render,
 	.enum_active_sources = text_ss_enum_sources,
+	.enum_all_sources = text_ss_enum_all_sources,
 	.get_width = text_ss_width,
 	.get_height = text_ss_height,
 	.get_defaults = freetype2_defaults,

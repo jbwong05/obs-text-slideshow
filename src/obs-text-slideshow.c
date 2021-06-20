@@ -597,6 +597,22 @@ void text_ss_enum_sources(void *data,
 	pthread_mutex_unlock(&text_ss->mutex);
 }
 
+void text_ss_enum_all_sources(void *data,
+		obs_source_enum_proc_t callback, void *param) {
+	struct text_slideshow *text_ss = data;
+
+	pthread_mutex_lock(&text_ss->mutex);
+	
+	DARRAY(struct text_data) text_srcs;
+	text_srcs.da = text_ss->text_srcs.da;
+
+	for (size_t i = 0; i < text_srcs.num; i++) {
+		callback(text_ss->source, text_srcs.array[i].source, param);
+	}
+
+	pthread_mutex_unlock(&text_ss->mutex);
+}
+
 uint32_t text_ss_width(void *data) {
 	struct text_slideshow *text_ss = data;
 	return text_ss->transition ? text_ss->cx : 0;
