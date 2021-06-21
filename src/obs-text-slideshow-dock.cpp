@@ -68,6 +68,7 @@ void TextSlideshowDock::setActiveSource(int index) {
     if(index >= 0 && index < text_slideshows.size()) {
         active_slideshow.source = text_slideshows[index];
         active_slideshow.index = index;
+        ui->sourceBox->setCurrentIndex(index);
     } else {
         active_slideshow.source = NULL;
         active_slideshow.index = -1;
@@ -75,17 +76,23 @@ void TextSlideshowDock::setActiveSource(int index) {
 }
 
 void TextSlideshowDock::chooseNewActiveSource() {
-    active_slideshow.source = NULL;
-    // Find first that is not hidden
-    for(int i = 0; i < text_slideshows.size() && !active_slideshow.source; i++) {
-        if(!obs_source_is_hidden(text_slideshows[i])) {
-            setActiveSource(i);
-        }
-    }
+    if(active_slideshow.index != -1) {
+        setActiveSource(active_slideshow.index);
 
-    // Default to first if all hidden
-    if(!active_slideshow.source) {
-        setActiveSource(0);
+    } else {
+        active_slideshow.source = NULL;
+        // Find first that is not hidden
+        for(int i = 0; i < text_slideshows.size() && !active_slideshow.source; i++) {
+            if(!obs_source_is_hidden(text_slideshows[i])) {
+                setActiveSource(i);
+                return;
+            }
+        }
+
+        // Default to first if all hidden
+        if(!active_slideshow.source) {
+            setActiveSource(0);
+        }
     }
 }
 
@@ -100,9 +107,15 @@ void TextSlideshowDock::updateSources() {
     scene = obs_scene_from_source(scene_source);
     obs_scene_enum_items(scene, findTextSlideshowSources, &text_slideshows);
 
+    active_slideshow.index = -1;
+
     for(int i = 0; i < text_slideshows.size(); i++) {
         const char *name = obs_source_get_name(text_slideshows[i]);
         ui->sourceBox->addItem(name);
+
+        if(active_slideshow.source == text_slideshows[i]) {
+            active_slideshow.index = i;
+        }
     }
 
     if(scene_source) {
@@ -152,7 +165,7 @@ TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 	ui->setupUi(this);
     setActiveSource(-1);
 
-    connect(ui->sourceBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+    connect(ui->sourceBox, QOverload<int>::of(&QComboBox::activated), 
         this, &TextSlideshowDock::changeActiveSource);
     connect(ui->refreshButton, &QPushButton::released, this, 
         &TextSlideshowDock::refresh);
