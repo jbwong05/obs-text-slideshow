@@ -159,16 +159,31 @@ void TextSlideshowDock::transition(int index) {
     }
 }
 
+static void callback(void *data, calldata_t *cd) {
+    TextSlideshowDock *dock = reinterpret_cast<TextSlideshowDock *>(data);
+    dock->refresh();
+}
+
 TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 	: QDockWidget(parent),
 	  ui(new Ui::TextSlideshowDock) {
 	ui->setupUi(this);
     setActiveSource(-1);
 
+    const char *source_signals[] = {
+        "source_create",
+        "source_destroy",
+        "source_rename",
+        "source_save"
+    };
+
+    signal_handler_t * obs_handler = obs_get_signal_handler();
+    for(int i = 0; i < 4; i++) {
+        signal_handler_connect(obs_handler, source_signals[i], callback, this);
+    }
+
     connect(ui->sourceBox, QOverload<int>::of(&QComboBox::activated), 
         this, &TextSlideshowDock::changeActiveSource);
-    connect(ui->refreshButton, &QPushButton::released, this, 
-        &TextSlideshowDock::refresh);
     connect(ui->textList, &QListWidget::currentRowChanged, this,
         &TextSlideshowDock::transition);
 

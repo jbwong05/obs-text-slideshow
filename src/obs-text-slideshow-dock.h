@@ -44,7 +44,6 @@ class TextSlideshowDock : public QDockWidget {
         void chooseNewActiveSource();
         void updateSources();
         void updateTexts();
-        void refresh();
         void transition(int index);
 
         std::unique_ptr<Ui::TextSlideshowDock> ui;
@@ -55,5 +54,5 @@ class TextSlideshowDock : public QDockWidget {
     public:
         TextSlideshowDock(QWidget *parent = nullptr);
         ~TextSlideshowDock();
-
+        void refresh();
 };
