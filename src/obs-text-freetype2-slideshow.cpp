@@ -93,7 +93,7 @@ static obs_source_t *create_freetype2(const char *text, obs_data_t *text_ss_sett
 		obs_data_get_bool(text_ss_settings, S_ANTIALIASING));
 	obs_data_set_string(settings, S_TEXT_FILE, "");
 	obs_data_set_string(settings, S_TEXT, text);
-	source = obs_source_create_private("text_ft2_source", NULL, settings);
+	source = obs_source_create_private("text_ft2_source", text, settings);
 
 	obs_data_release(curr_font);
 	obs_data_release(settings);
@@ -171,7 +171,7 @@ static void text_properties(obs_properties_t *props) {
 
 static obs_properties_t *freetype2_properties(void *data) {
 	obs_properties_t *props = obs_properties_create();
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	
 	ss_properites(props);
 	text_properties(props);
@@ -179,34 +179,37 @@ static obs_properties_t *freetype2_properties(void *data) {
 	return props;
 }
 
-struct obs_source_info text_freetype2_slideshow_info = {
-	.id = "text-freetype2-slideshow",
-	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+void load_text_freetype2_slideshow() {
+	obs_source_info info = {};
+	info.id = "text-freetype2-slideshow";
+	info.type = OBS_SOURCE_TYPE_INPUT;
+	info.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
 			OBS_SOURCE_COMPOSITE | 
 #ifdef _WIN32
 			OBS_SOURCE_DEPRECATED |
 #endif
-			OBS_SOURCE_CONTROLLABLE_MEDIA,
-	.get_name = freetype2_getname,
-	.create = text_ss_create,
-	.destroy = text_ss_destroy,
-	.update = freetype2_update,
-	.activate = text_ss_activate,
-	.deactivate = text_ss_deactivate,
-	.video_render = text_ss_video_render,
-	.video_tick = text_ss_video_tick,
-	.audio_render = text_ss_audio_render,
-	.enum_active_sources = text_ss_enum_sources,
-	.get_width = text_ss_width,
-	.get_height = text_ss_height,
-	.get_defaults = freetype2_defaults,
-	.get_properties = freetype2_properties,
-	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
-	.media_play_pause = text_ss_play_pause,
-	.media_restart = text_ss_restart,
-	.media_stop = text_ss_stop,
-	.media_next = text_ss_next_slide,
-	.media_previous = text_ss_previous_slide,
-	.media_get_state = ss_get_state,
-};
+			OBS_SOURCE_CONTROLLABLE_MEDIA;
+	info.get_properties = freetype2_properties;
+	info.icon_type = OBS_ICON_TYPE_SLIDESHOW;
+	info.get_name = freetype2_getname;
+	info.create = text_ss_create;
+	info.destroy = text_ss_destroy;
+	info.get_width = text_ss_width;
+	info.get_height = text_ss_height;
+	info.get_defaults = freetype2_defaults;
+	info.update = freetype2_update;
+	info.activate = text_ss_activate;
+	info.deactivate = text_ss_deactivate;
+	info.video_tick = text_ss_video_tick;
+	info.video_render = text_ss_video_render;
+	info.enum_active_sources = text_ss_enum_sources;
+	info.audio_render = text_ss_audio_render;
+	info.media_play_pause = text_ss_play_pause;
+	info.media_restart = text_ss_restart;
+	info.media_stop = text_ss_stop;
+	info.media_next = text_ss_next_slide;
+	info.media_previous = text_ss_previous_slide;
+	info.media_get_state = text_ss_get_state;
+
+	obs_register_source(&info);
+}

@@ -17,13 +17,16 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 #include "obs-text-slideshow.h"
+#include <vector>
+
+using std::vector;
 
 void play_pause_hotkey(void *data, obs_hotkey_id id,
 			      obs_hotkey_t *hotkey, bool pressed) {
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (pressed && obs_source_showing(text_ss->source))
 		obs_source_media_play_pause(text_ss->source, !text_ss->paused);
@@ -34,7 +37,7 @@ void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (pressed && obs_source_showing(text_ss->source))
 		obs_source_media_restart(text_ss->source);
@@ -45,7 +48,7 @@ void stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (pressed && obs_source_showing(text_ss->source))
 		obs_source_media_stop(text_ss->source);
@@ -56,7 +59,7 @@ void next_slide_hotkey(void *data, obs_hotkey_id id,
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (!text_ss->manual)
 		return;
@@ -70,7 +73,7 @@ void previous_slide_hotkey(void *data, obs_hotkey_id id,
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (!text_ss->manual)
 		return;
@@ -152,7 +155,7 @@ static void free_text_srcs(struct darray *array) {
 }
 
 void text_ss_destroy(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	obs_source_release(text_ss->transition);
 	free_text_srcs(&text_ss->text_srcs.da);
@@ -160,8 +163,73 @@ void text_ss_destroy(void *data) {
 	bfree(text_ss);
 }
 
+static void get_texts(void *data, calldata_t *cd) {
+	vector<const char *> *texts = (vector<const char *> *)calldata_ptr(cd, "texts");
+	struct text_slideshow *text_ss = (text_slideshow *)data;
+
+	pthread_mutex_lock(&text_ss->mutex);
+	
+	DARRAY(struct text_data) text_srcs;
+	text_srcs.da = text_ss->text_srcs.da;
+
+	for (size_t i = 0; i < text_srcs.num; i++) {
+		texts->push_back(text_srcs.array[i].text);
+	}
+
+	pthread_mutex_unlock(&text_ss->mutex);
+}
+
+static inline bool item_valid(struct text_slideshow *text_ss) {
+	return text_ss->text_srcs.num && 
+		text_ss->cur_item < text_ss->text_srcs.num;
+}
+
+static void set_media_state(void *data, enum obs_media_state state) {
+	struct text_slideshow *text_ss = (text_slideshow *)data;
+	text_ss->state = state;
+}
+
+static void do_transition(void *data, bool to_null) {
+	struct text_slideshow *text_ss = (text_slideshow *)data;
+	bool valid = item_valid(text_ss);
+
+	if (valid && text_ss->use_cut) {
+		obs_transition_set(text_ss->transition,
+				   text_ss->text_srcs.array[text_ss->cur_item].source);
+
+	} else if (valid && !to_null) {
+		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
+				     text_ss->tr_speed,
+				     text_ss->text_srcs.array[text_ss->cur_item].source);
+
+	} else {
+		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
+				     text_ss->tr_speed, NULL);
+		set_media_state(text_ss, OBS_MEDIA_STATE_ENDED);
+		obs_source_media_ended(text_ss->source);
+	}
+}
+
+static void dock_transition(void *data, calldata_t *cd) {
+	int index = (int)calldata_int(cd, "index");
+
+	struct text_slideshow *text_ss = (text_slideshow *)data;
+
+	if (!text_ss->text_srcs.num || 
+			obs_transition_get_time(text_ss->transition) < 1.0f)
+		return;
+
+	if (index >= text_ss->text_srcs.num)
+		text_ss->cur_item = 0;
+	else 
+		text_ss->cur_item = index;
+
+	do_transition(text_ss, false);
+}
+
 void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
-	struct text_slideshow *text_ss = bzalloc(sizeof(*text_ss));
+	struct text_slideshow *text_ss = (text_slideshow *)
+		bzalloc(sizeof(*text_ss));
 
 	text_ss->source = source;
 
@@ -190,6 +258,12 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 		obs_module_text("SlideShow.PreviousSlide"),
 		previous_slide_hotkey, text_ss);
 
+	proc_handler_t *handler = obs_source_get_proc_handler(source);
+	proc_handler_add(handler, "void get_texts(ptr texts)", 
+		get_texts, text_ss);
+	proc_handler_add(handler, "void dock_transition(int index)", 
+		dock_transition, text_ss);
+
 	pthread_mutex_init_value(&text_ss->mutex);
 	if (pthread_mutex_init(&text_ss->mutex, NULL) != 0) {
 		text_ss_destroy(text_ss);
@@ -200,37 +274,6 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 
 	UNUSED_PARAMETER(settings);
 	return text_ss;
-}
-
-static inline bool item_valid(struct text_slideshow *text_ss) {
-	return text_ss->text_srcs.num && 
-		text_ss->cur_item < text_ss->text_srcs.num;
-}
-
-static void set_media_state(void *data, enum obs_media_state state) {
-	struct text_slideshow *text_ss = data;
-	text_ss->state = state;
-}
-
-static void do_transition(void *data, bool to_null) {
-	struct text_slideshow *text_ss = data;
-	bool valid = item_valid(text_ss);
-
-	if (valid && text_ss->use_cut) {
-		obs_transition_set(text_ss->transition,
-				   text_ss->text_srcs.array[text_ss->cur_item].source);
-
-	} else if (valid && !to_null) {
-		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
-				     text_ss->tr_speed,
-				     text_ss->text_srcs.array[text_ss->cur_item].source);
-
-	} else {
-		obs_transition_start(text_ss->transition, OBS_TRANSITION_MODE_AUTO,
-				     text_ss->tr_speed, NULL);
-		set_media_state(text_ss, OBS_MEDIA_STATE_ENDED);
-		obs_source_media_ended(text_ss->source);
-	}
 }
 
 static void free_text_src(struct darray *array) {
@@ -256,7 +299,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 	DARRAY(struct text_data) old_text_srcs;
 	obs_source_t *new_tr = NULL;
 	obs_source_t *old_tr = NULL;
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	obs_data_array_t *array;
 	const char *tr_name;
 	uint32_t new_duration;
@@ -427,7 +470,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 }
 
 void text_ss_activate(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (text_ss->behavior == BEHAVIOR_STOP_RESTART) {
 		text_ss->restart_on_activate = true;
@@ -438,7 +481,7 @@ void text_ss_activate(void *data) {
 }
 
 void text_ss_deactivate(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE)
 		text_ss->pause_on_deactivate = true;
@@ -456,7 +499,7 @@ static obs_source_t *get_transition(struct text_slideshow *text_ss) {
 }
 
 void text_ss_video_render(void *data, gs_effect_t *effect) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	obs_source_t *transition = get_transition(text_ss);
 
 	if (transition) {
@@ -468,7 +511,7 @@ void text_ss_video_render(void *data, gs_effect_t *effect) {
 }
 
 void text_ss_video_tick(void *data, float seconds) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (!text_ss->transition || !text_ss->slide_time)
 		return;
@@ -573,7 +616,7 @@ bool text_ss_audio_render(void *data, uint64_t *ts_out,
 			    struct obs_source_audio_mix *audio_output,
 			    uint32_t mixers, size_t channels,
 			    size_t sample_rate) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	obs_source_t *transition = get_transition(text_ss);
 	bool success;
 
@@ -589,7 +632,7 @@ bool text_ss_audio_render(void *data, uint64_t *ts_out,
 
 void text_ss_enum_sources(void *data, 
 		obs_source_enum_proc_t cb, void *param) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	pthread_mutex_lock(&text_ss->mutex);
 	if (text_ss->transition)
@@ -598,12 +641,12 @@ void text_ss_enum_sources(void *data,
 }
 
 uint32_t text_ss_width(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	return text_ss->transition ? text_ss->cx : 0;
 }
 
 uint32_t text_ss_height(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	return text_ss->transition ? text_ss->cy : 0;
 }
 
@@ -686,7 +729,7 @@ void ss_properites(obs_properties_t *props) {
 }
 
 void text_ss_play_pause(void *data, bool pause) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (text_ss->stop) {
 		text_ss->stop = false;
@@ -704,7 +747,7 @@ void text_ss_play_pause(void *data, bool pause) {
 }
 
 void text_ss_restart(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	text_ss->elapsed = 0.0f;
 	text_ss->cur_item = 0;
@@ -716,7 +759,7 @@ void text_ss_restart(void *data) {
 }
 
 void text_ss_stop(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	text_ss->elapsed = 0.0f;
 	text_ss->cur_item = 0;
@@ -729,7 +772,7 @@ void text_ss_stop(void *data) {
 }
 
 void text_ss_next_slide(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (!text_ss->text_srcs.num || 
 			obs_transition_get_time(text_ss->transition) < 1.0f)
@@ -742,7 +785,7 @@ void text_ss_next_slide(void *data) {
 }
 
 void text_ss_previous_slide(void *data) {
-	struct text_slideshow *text_ss = data;
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (!text_ss->text_srcs.num || 
 			obs_transition_get_time(text_ss->transition) < 1.0f)
@@ -756,7 +799,7 @@ void text_ss_previous_slide(void *data) {
 	do_transition(text_ss, false);
 }
 
-enum obs_media_state ss_get_state(void *data) {
-	struct text_slideshow *text_ss = data;
+enum obs_media_state text_ss_get_state(void *data) {
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	return text_ss->state;
 }
