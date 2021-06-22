@@ -66,4 +66,4 @@ make
 - [ ] Text input from files
 - [ ] Individual text settings for each text source
 - [x] GUI dock for easier transitioning between sources
-  - [ ] Find work around for the need for a `refresh sources` button because the obs-frontend-api doesn't have a source added or edited event
+  - [x] Find work around for the need for a `refresh sources` button; ~~because the obs-frontend-api doesn't have a source added or edited event~~ libobs handles the different signals for sources and not the frontend api
