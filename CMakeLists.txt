@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # Change obs-plugintemplate to your plugin's name in a machine-readable format
 # (e.g.: obs-myawesomeplugin) and set 
-project(obs-text-slideshow VERSION 1.0.0)
+project(obs-text-slideshow VERSION 1.1.0)
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want
 # to see as the author of the plugin (in the plugin's metadata itself and in the installers)
@@ -101,18 +101,26 @@ if(WIN32)
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
         add_definitions(/MP /d2FH4-)
-        # Hardcoded path to w32-pthreads atm because find_library not properly finding w32-pthreads.lib
-        target_link_libraries(
-            ${CMAKE_PROJECT_NAME} 
-            ${CMAKE_CURRENT_SOURCE_DIR}/obs-studio/build/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib)
     endif()
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(ARCH_NAME "64bit")
 		set(OBS_BUILDDIR_ARCH "build64")
+        if(MSVC)
+            # Hardcoded path to w32-pthreads atm because find_library not properly finding w32-pthreads.lib
+            target_link_libraries(
+                ${CMAKE_PROJECT_NAME} 
+                ${CMAKE_CURRENT_SOURCE_DIR}/obs-studio/build64/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib)
+        endif()
 	else()
 		set(ARCH_NAME "32bit")
 		set(OBS_BUILDDIR_ARCH "build32")
+        if(MSVC)
+            # Hardcoded path to w32-pthreads atm because find_library not properly finding w32-pthreads.lib
+            target_link_libraries(
+                ${CMAKE_PROJECT_NAME} 
+                ${CMAKE_CURRENT_SOURCE_DIR}/obs-studio/build32/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib)
+        endif()
 	endif()
 
 	include_directories(
