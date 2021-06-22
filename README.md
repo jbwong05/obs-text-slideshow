@@ -8,6 +8,8 @@ Inspired by the built in [image slideshow](https://github.com/obsproject/obs-stu
 ## Installation
 Installers can be found in the [Releases](https://github.com/jbwong05/obs-text-slideshow/releases) section.
 
+Note: The macOS installer is currently unsigned because I don't have a subscription for the Apple Developer program.
+
 ## Building from Source
 
 ### Prerequisites
@@ -63,4 +65,5 @@ make
 ## Possible future work
 - [ ] Text input from files
 - [ ] Individual text settings for each text source
-- [ ] GUI dock for easier transitioning between sources
+- [x] GUI dock for easier transitioning between sources
+  - [ ] Find work around for the need for a `refresh sources` button because the obs-frontend-api doesn't have a source added or edited event
