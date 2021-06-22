@@ -116,6 +116,9 @@ struct text_slideshow {
 	enum obs_media_state state;
 };
 
+typedef obs_source_t *(* text_source_create)(const char *text, 
+		obs_data_t *text_ss_settings);
+
 void play_pause_hotkey(void *data, obs_hotkey_id id,
 	obs_hotkey_t *hotkey, bool pressed);
 void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
@@ -129,8 +132,7 @@ void previous_slide_hotkey(void *data, obs_hotkey_id id,
 void text_ss_destroy(void *data);
 void *text_ss_create(obs_data_t *settings, obs_source_t *source);
 void text_ss_update(void *data, obs_data_t *settings,
-	obs_source_t *(* create_source)(const char *text, 
-		obs_data_t *text_ss_settings));
+	text_source_create text_creator);
 void text_ss_activate(void *data);
 void text_ss_deactivate(void *data);
 void text_ss_video_render(void *data, gs_effect_t *effect);

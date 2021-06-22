@@ -103,9 +103,7 @@ static obs_source_t *get_source(struct darray *array, const char *text) {
 
 static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 		const char *text, uint32_t *cx, uint32_t *cy, 
-		obs_data_t *settings,
-		obs_source_t *(* create_source)(const char *text, 
-			obs_data_t *text_ss_settings)) {
+		obs_data_t *settings, text_source_create text_creator) {
 	DARRAY(struct text_data) new_text_data;
 	struct text_data data;
 	obs_source_t *new_source;
@@ -121,7 +119,7 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 	if (new_source)
 		obs_source_update(new_source, settings);
 	if (!new_source)
-		new_source = (*create_source)(text, settings);
+		new_source = (*text_creator)(text, settings);
 
 	if (new_source) {
 		uint32_t new_cx = obs_source_get_width(new_source);
@@ -293,8 +291,7 @@ static inline size_t random_text_src(struct text_slideshow *text_ss) {
 }
 
 void text_ss_update(void *data, obs_data_t *settings,
-		obs_source_t *(* create_source)(const char *text, 
-		obs_data_t *text_ss_settings)) {
+		text_source_create text_creator) {
 	DARRAY(struct text_data) new_text_srcs;
 	DARRAY(struct text_data) old_text_srcs;
 	obs_source_t *new_tr = NULL;
@@ -361,7 +358,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *curr_text = obs_data_get_string(item, "value");
 		add_text_src(text_ss, &new_text_srcs.da, curr_text, &cx, &cy, 
-			settings, create_source);
+			settings, text_creator);
 		obs_data_release(item);
 	}
 
