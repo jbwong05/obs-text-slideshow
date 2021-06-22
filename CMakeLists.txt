@@ -56,22 +56,26 @@ configure_file(
 )
 
 set(PLUGIN_SOURCES
-	src/plugin-main.c
-    src/obs-text-freetype2-slideshow.c
-    src/obs-text-slideshow.c)
+	src/plugin-main.cpp
+    src/obs-text-freetype2-slideshow.cpp
+    src/obs-text-slideshow.cpp
+    src/obs-text-slideshow-dock.cpp)
 
 if(WIN32)
     set(PLUGIN_SOURCES 
         ${PLUGIN_SOURCES} 
-        src/obs-text-gdiplus-slideshow.c)
+        src/obs-text-gdiplus-slideshow.cpp)
 endif()
 
 set(PLUGIN_HEADERS
 	src/plugin-macros.generated.h
-    src/obs-text-slideshow.h)
+    src/obs-text-slideshow.h
+    src/obs-text-slideshow-dock.h)
+
+qt5_wrap_ui(PLUGIN_UI_HEADERS src/obs-text-slideshow-dock.ui)
 
 # --- Platform-independent build settings ---
-add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
+add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS} ${PLUGIN_UI_HEADERS})
 
 include_directories(
 	"${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api"
@@ -97,18 +101,26 @@ if(WIN32)
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
         add_definitions(/MP /d2FH4-)
-        # Hardcoded path to w32-pthreads atm because find_library not properly finding w32-pthreads.lib
-        target_link_libraries(
-            ${CMAKE_PROJECT_NAME} 
-            ${CMAKE_CURRENT_SOURCE_DIR}/obs-studio/build/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib)
     endif()
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(ARCH_NAME "64bit")
 		set(OBS_BUILDDIR_ARCH "build64")
+        if(MSVC)
+            # Hardcoded path to w32-pthreads atm because find_library not properly finding w32-pthreads.lib
+            target_link_libraries(
+                ${CMAKE_PROJECT_NAME} 
+                ${CMAKE_CURRENT_SOURCE_DIR}/obs-studio/build64/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib)
+        endif()
 	else()
 		set(ARCH_NAME "32bit")
 		set(OBS_BUILDDIR_ARCH "build32")
+        if(MSVC)
+            # Hardcoded path to w32-pthreads atm because find_library not properly finding w32-pthreads.lib
+            target_link_libraries(
+                ${CMAKE_PROJECT_NAME} 
+                ${CMAKE_CURRENT_SOURCE_DIR}/obs-studio/build32/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib)
+        endif()
 	endif()
 
 	include_directories(
