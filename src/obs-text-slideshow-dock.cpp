@@ -39,7 +39,7 @@ static bool findTextSlideshowSources(obs_scene_t *scene,
 #endif
         ) {
             vector<obs_source_t *> *text_slideshows = reinterpret_cast<vector<obs_source_t *> *>(param);
-            text_slideshows->push_back(source);
+            text_slideshows->insert(text_slideshows->begin(), source);
         }
     }
 
