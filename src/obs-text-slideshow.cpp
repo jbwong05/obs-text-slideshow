@@ -270,7 +270,9 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 
 	obs_source_update(source, NULL);
 
-	UNUSED_PARAMETER(settings);
+	//UNUSED_PARAMETER(settings);
+	text_ss->settings = settings;
+
 	return text_ss;
 }
 
@@ -737,10 +739,13 @@ void text_ss_play_pause(void *data, bool pause) {
 		text_ss->manual = pause;
 	}
 
-	if (pause)
+	if (pause) {
 		set_media_state(text_ss, OBS_MEDIA_STATE_PAUSED);
-	else
+		obs_data_set_string(text_ss->settings, S_MODE, S_MODE_MANUAL);
+	} else {
 		set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
+		obs_data_set_string(text_ss->settings, S_MODE, S_MODE_AUTO);
+	}
 }
 
 void text_ss_restart(void *data) {
@@ -753,6 +758,7 @@ void text_ss_restart(void *data) {
 	do_transition(text_ss, false);
 
 	set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
+	obs_data_set_string(text_ss->settings, S_MODE, S_MODE_AUTO);
 }
 
 void text_ss_stop(void *data) {
@@ -766,6 +772,7 @@ void text_ss_stop(void *data) {
 	text_ss->paused = false;
 
 	set_media_state(text_ss, OBS_MEDIA_STATE_STOPPED);
+	obs_data_set_string(text_ss->settings, S_MODE, S_MODE_MANUAL);
 }
 
 void text_ss_next_slide(void *data) {

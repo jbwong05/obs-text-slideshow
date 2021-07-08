@@ -80,6 +80,7 @@ enum behavior {
 
 struct text_slideshow {
 	obs_source_t *source;
+	obs_data_t *settings;
 
 	bool randomize;
 	bool loop;
