@@ -21,6 +21,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <util/platform.h>
 #include <util/darray.h>
 #include <util/dstr.h>
+#include <string>
+
+using std::string;
 
 #define S_TR_SPEED                     "transition_speed"
 #define S_CUSTOM_SIZE                  "use_custom_size"
@@ -37,6 +40,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define S_MODE                         "slide_mode"
 #define S_MODE_AUTO                    "mode_auto"
 #define S_MODE_MANUAL                  "mode_manual"
+
+#define S_USE_FILE                     "read_from_file"
+#define S_FILE                         "file"
 
 #define TR_CUT                         "cut"
 #define TR_FADE                        "fade"
@@ -61,11 +67,22 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define T_MODE_AUTO                    T_SS_("SlideMode.Auto")
 #define T_MODE_MANUAL                  T_SS_("SlideMode.Manual")
 
+#define T_USE_FILE                     T_SS_("ReadFromFile")
+#define T_FILE                         T_SS_("TextFile")
+#define T_FILTER_TEXT_FILES            T_SS_("Filter.TextFiles")
+#define T_FILTER_ALL_FILES             T_SS_("Filter.AllFiles")
+
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 #define T_TR_CUT                       T_TR_("Cut")
 #define T_TR_FADE                      T_TR_("Fade")
 #define T_TR_SWIPE                     T_TR_("Swipe")
 #define T_TR_SLIDE                     T_TR_("Slide")
+
+#define set_vis(var, val, show)                           \
+	do {                                              \
+		p = obs_properties_get(props, val);       \
+		obs_property_set_visible(p, var == show); \
+	} while (false)
 
 struct text_data {
 	char *text;
@@ -104,6 +121,11 @@ struct text_slideshow {
 
 	pthread_mutex_t mutex;
 	DARRAY(struct text_data) text_srcs;
+
+	bool read_from_file = false;
+	string file;
+	time_t file_timestamp = 0;
+	bool update_file = false;
 
 	enum behavior behavior;
 
@@ -147,7 +169,7 @@ void text_ss_enum_all_sources(void *data,
 uint32_t text_ss_width(void *data);
 uint32_t text_ss_height(void *data);
 void ss_defaults(obs_data_t *settings);
-void ss_properites(obs_properties_t *props);
+void ss_properites(void *data, obs_properties_t *props);
 void text_ss_play_pause(void *data, bool pause);
 void text_ss_restart(void *data);
 void text_ss_stop(void *data);

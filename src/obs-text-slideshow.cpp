@@ -18,6 +18,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include "obs-text-slideshow.h"
 #include <vector>
+#include <algorithm>
 
 using std::vector;
 
@@ -663,11 +664,21 @@ static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
 #define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
 
-void ss_properites(obs_properties_t *props) {
+static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
+			     obs_data_t *s) {
+	bool use_file = obs_data_get_bool(s, S_USE_FILE);
+
+	set_vis(use_file, S_FILE, true);
+	return true;
+}
+
+void ss_properites(void *data, obs_properties_t *props) {
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	struct obs_video_info ovi;
 	obs_property_t *p;
 	int cx;
 	int cy;
+	string path;
 
 	/* ----------------- */
 
@@ -676,6 +687,28 @@ void ss_properites(obs_properties_t *props) {
 	cy = (int)ovi.base_height;
 
 	/* ----------------- */
+
+	p = obs_properties_add_bool(props, S_USE_FILE, T_USE_FILE);
+	obs_property_set_modified_callback(p, use_file_changed);
+
+	string filter;
+	filter += T_FILTER_TEXT_FILES;
+	filter += " (*.txt);;";
+	filter += T_FILTER_ALL_FILES;
+	filter += " (*.*)";
+
+	if (text_ss && !text_ss->file.empty()) {
+		const char *slash;
+
+		path = text_ss->file;
+		replace(path.begin(), path.end(), '\\', '/');
+		slash = strrchr(path.c_str(), '/');
+		if (slash)
+			path.resize(slash - path.c_str() + 1);
+	}
+
+	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
+				filter.c_str(), path.c_str());
 
 	obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
 					 OBS_EDITABLE_LIST_TYPE_STRINGS,

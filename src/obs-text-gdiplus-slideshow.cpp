@@ -220,21 +220,6 @@ static void gdiplus_defaults(obs_data_t *settings) {
 	text_defaults(settings);
 }
 
-#define set_vis(var, val, show)                           \
-	do {                                              \
-		p = obs_properties_get(props, val);       \
-		obs_property_set_visible(p, var == show); \
-	} while (false)
-
-static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
-			     obs_data_t *s) {
-	bool use_file = obs_data_get_bool(s, S_USE_FILE);
-
-	set_vis(use_file, S_TEXT, false);
-	set_vis(use_file, S_FILE, true);
-	return true;
-}
-
 static bool outline_changed(obs_properties_t *props, obs_property_t *p,
 			    obs_data_t *s) {
 	bool outline = obs_data_get_bool(s, S_OUTLINE);
@@ -354,9 +339,8 @@ static void text_properties(obs_properties_t *props) {
 
 static obs_properties_t *gdiplus_properties(void *data) {
 	obs_properties_t *props = obs_properties_create();
-	struct text_slideshow *text_ss = (text_slideshow *)data;
 	
-	ss_properites(props);
+	ss_properites(data, props);
 	text_properties(props);
 
 	return props;

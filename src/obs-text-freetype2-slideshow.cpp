@@ -171,9 +171,8 @@ static void text_properties(obs_properties_t *props) {
 
 static obs_properties_t *freetype2_properties(void *data) {
 	obs_properties_t *props = obs_properties_create();
-	struct text_slideshow *text_ss = (text_slideshow *)data;
 	
-	ss_properites(props);
+	ss_properites(data, props);
 	text_properties(props);
 
 	return props;
