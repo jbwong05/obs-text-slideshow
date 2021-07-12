@@ -103,9 +103,7 @@ static obs_source_t *get_source(struct darray *array, const char *text) {
 
 static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 		const char *text, uint32_t *cx, uint32_t *cy, 
-		obs_data_t *settings,
-		obs_source_t *(* create_source)(const char *text, 
-			obs_data_t *text_ss_settings)) {
+		obs_data_t *settings, text_source_create text_creator) {
 	DARRAY(struct text_data) new_text_data;
 	struct text_data data;
 	obs_source_t *new_source;
@@ -121,7 +119,7 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 	if (new_source)
 		obs_source_update(new_source, settings);
 	if (!new_source)
-		new_source = (*create_source)(text, settings);
+		new_source = (*text_creator)(text, settings);
 
 	if (new_source) {
 		uint32_t new_cx = obs_source_get_width(new_source);
@@ -272,7 +270,9 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 
 	obs_source_update(source, NULL);
 
-	UNUSED_PARAMETER(settings);
+	//UNUSED_PARAMETER(settings);
+	text_ss->settings = settings;
+
 	return text_ss;
 }
 
@@ -293,8 +293,7 @@ static inline size_t random_text_src(struct text_slideshow *text_ss) {
 }
 
 void text_ss_update(void *data, obs_data_t *settings,
-		obs_source_t *(* create_source)(const char *text, 
-		obs_data_t *text_ss_settings)) {
+		text_source_create text_creator) {
 	DARRAY(struct text_data) new_text_srcs;
 	DARRAY(struct text_data) old_text_srcs;
 	obs_source_t *new_tr = NULL;
@@ -361,7 +360,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *curr_text = obs_data_get_string(item, "value");
 		add_text_src(text_ss, &new_text_srcs.da, curr_text, &cx, &cy, 
-			settings, create_source);
+			settings, text_creator);
 		obs_data_release(item);
 	}
 
@@ -740,10 +739,13 @@ void text_ss_play_pause(void *data, bool pause) {
 		text_ss->manual = pause;
 	}
 
-	if (pause)
+	if (pause) {
 		set_media_state(text_ss, OBS_MEDIA_STATE_PAUSED);
-	else
+		obs_data_set_string(text_ss->settings, S_MODE, S_MODE_MANUAL);
+	} else {
 		set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
+		obs_data_set_string(text_ss->settings, S_MODE, S_MODE_AUTO);
+	}
 }
 
 void text_ss_restart(void *data) {
@@ -756,6 +758,7 @@ void text_ss_restart(void *data) {
 	do_transition(text_ss, false);
 
 	set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
+	obs_data_set_string(text_ss->settings, S_MODE, S_MODE_AUTO);
 }
 
 void text_ss_stop(void *data) {
@@ -769,6 +772,7 @@ void text_ss_stop(void *data) {
 	text_ss->paused = false;
 
 	set_media_state(text_ss, OBS_MEDIA_STATE_STOPPED);
+	obs_data_set_string(text_ss->settings, S_MODE, S_MODE_MANUAL);
 }
 
 void text_ss_next_slide(void *data) {
