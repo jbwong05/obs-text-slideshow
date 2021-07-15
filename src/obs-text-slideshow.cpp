@@ -133,8 +133,6 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 			*cx = new_cx;
 		if (new_cy > *cy)
 			*cy = new_cy;
-
-		void *source_data = obs_obj_get_data(new_source);
 	}
 
 	*array = new_text_data.da;
@@ -268,10 +266,9 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 		return NULL;
 	}
 
-	obs_source_update(source, NULL);
-
-	//UNUSED_PARAMETER(settings);
 	text_ss->settings = settings;
+
+	obs_source_update(source, settings);
 
 	return text_ss;
 }
@@ -293,7 +290,8 @@ static inline size_t random_text_src(struct text_slideshow *text_ss) {
 }
 
 void text_ss_update(void *data, obs_data_t *settings,
-		text_source_create text_creator) {
+		text_source_create text_creator,
+		set_text_alignment set_alignment) {
 	DARRAY(struct text_data) new_text_srcs;
 	DARRAY(struct text_data) old_text_srcs;
 	obs_source_t *new_tr = NULL;
@@ -446,7 +444,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 	text_ss->cur_item = 0;
 	text_ss->elapsed = 0.0f;
 	obs_transition_set_size(text_ss->transition, cx, cy);
-	obs_transition_set_alignment(text_ss->transition, OBS_ALIGN_CENTER);
+	(*set_alignment)(text_ss->transition, settings);
 	obs_transition_set_scale_type(text_ss->transition,
 				      OBS_TRANSITION_SCALE_ASPECT);
 

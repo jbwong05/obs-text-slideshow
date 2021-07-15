@@ -101,8 +101,14 @@ static obs_source_t *create_freetype2(const char *text, obs_data_t *text_ss_sett
 	return source;
 }
 
+inline static void update_freetype2_alignment(obs_source_t *transition, 
+		obs_data_t *text_ss_settings) {
+	obs_transition_set_alignment(transition, OBS_ALIGN_CENTER);
+}
+
 static void freetype2_update(void *data, obs_data_t *settings) {
-	text_ss_update(data, settings, create_freetype2);
+	text_ss_update(data, settings, create_freetype2, 
+		update_freetype2_alignment);
 }
 
 static void text_defaults(obs_data_t *settings) {

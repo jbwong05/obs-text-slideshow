@@ -181,8 +181,20 @@ static obs_source_t *create_gdiplus(const char *text, obs_data_t *text_ss_settin
 	return source;
 }
 
+static void update_gdiplus_alignment(obs_source_t *transition, 
+		obs_data_t *text_ss_settings) {
+	const char *align_str = obs_data_get_string(text_ss_settings, S_ALIGN);
+	if(strcmp(align_str, S_ALIGN_CENTER) == 0) {
+		obs_transition_set_alignment(transition, OBS_ALIGN_CENTER);
+	} else if(strcmp(align_str, S_ALIGN_RIGHT) == 0) {
+		obs_transition_set_alignment(transition, OBS_ALIGN_RIGHT);
+	} else {
+		obs_transition_set_alignment(transition, OBS_ALIGN_LEFT);
+	}
+}
+
 static void gdiplus_update(void *data, obs_data_t *settings) {
-	text_ss_update(data, settings, create_gdiplus);
+	text_ss_update(data, settings, create_gdiplus, update_gdiplus_alignment);
 }
 
 static void text_defaults(obs_data_t *settings) {
