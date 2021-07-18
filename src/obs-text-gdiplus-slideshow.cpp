@@ -374,6 +374,26 @@ static obs_properties_t *gdiplus_properties(void *data) {
 	return props;
 }
 
+#include <obs-frontend-api.h>
+
+static bool enum_callback(void *param, obs_source_t *source) {
+	const char *id = obs_source_get_id(source);
+
+	if(strcmp(id, "text-gdiplus-slideshow") == 0) {
+		obs_data_t *settings = obs_source_get_settings(source);
+		obs_source_update(source, settings);
+	}
+	
+	return true;
+}
+
+static void OBSFrontendEventWrapper(enum obs_frontend_event event, 
+        void *ptr) {
+	if(event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
+        obs_enum_sources(enum_callback, NULL);
+	}
+}
+
 void load_text_gdiplus_slideshow() {
 	obs_source_info info = {};
 	info.id = "text-gdiplus-slideshow";
@@ -405,4 +425,5 @@ void load_text_gdiplus_slideshow() {
 	info.media_get_state = text_ss_get_state;
 
 	obs_register_source(&info);
+	obs_frontend_add_event_callback(OBSFrontendEventWrapper, NULL);
 }
