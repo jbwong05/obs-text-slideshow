@@ -156,6 +156,7 @@ void text_ss_destroy(void *data) {
 	obs_source_release(text_ss->transition);
 	free_text_srcs(&text_ss->text_srcs.da);
 	pthread_mutex_destroy(&text_ss->mutex);
+	pthread_cond_destroy(&text_ss->dock_get_texts);
 	bfree(text_ss);
 }
 
@@ -164,7 +165,11 @@ static void get_texts(void *data, calldata_t *cd) {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	pthread_mutex_lock(&text_ss->mutex);
-	
+
+	if(!text_ss->dock_can_get_texts) {
+		pthread_cond_wait(&text_ss->dock_get_texts, &text_ss->mutex);
+	}
+
 	DARRAY(struct text_data) text_srcs;
 	text_srcs.da = text_ss->text_srcs.da;
 
@@ -266,6 +271,15 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source) {
 		return NULL;
 	}
 
+	if (pthread_cond_init(&text_ss->dock_get_texts, NULL) != 0) {
+		text_ss_destroy(text_ss);
+		return NULL;
+	}
+
+	pthread_mutex_lock(&text_ss->mutex);
+	text_ss->dock_can_get_texts = false;
+	pthread_mutex_unlock(&text_ss->mutex);
+
 	text_ss->settings = settings;
 
 	obs_source_update(source, settings);
@@ -306,6 +320,10 @@ void text_ss_update(void *data, obs_data_t *settings,
 	size_t count;
 	const char *behavior;
 	const char *mode;
+
+	pthread_mutex_lock(&text_ss->mutex);
+	text_ss->dock_can_get_texts = false;
+	pthread_mutex_unlock(&text_ss->mutex);
 
 	/* ------------------------------------- */
 	/* get settings data */
@@ -387,6 +405,9 @@ void text_ss_update(void *data, obs_data_t *settings,
 	text_ss->tr_speed = new_speed;
 	text_ss->tr_name = tr_name;
 	text_ss->slide_time = (float)new_duration / 1000.0f;
+
+	text_ss->dock_can_get_texts = true;
+	pthread_cond_signal(&text_ss->dock_get_texts);
 
 	pthread_mutex_unlock(&text_ss->mutex);
 

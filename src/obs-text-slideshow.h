@@ -103,6 +103,8 @@ struct text_slideshow {
 	uint32_t cx;
 	uint32_t cy;
 
+	bool dock_can_get_texts;
+	pthread_cond_t dock_get_texts;
 	pthread_mutex_t mutex;
 	DARRAY(struct text_data) text_srcs;
 
