@@ -149,7 +149,9 @@ void TextSlideshowDock::refresh() {
     }
 }
 
-void TextSlideshowDock::transition(int index) {
+void TextSlideshowDock::transition(QListWidgetItem *item) {
+    int index = ui->textList->row(item);
+
     if(index >= 0) {
         proc_handler_t *handler = obs_source_get_proc_handler(active_slideshow.source);
         calldata_t cd = {0};
@@ -184,7 +186,7 @@ TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 
     connect(ui->sourceBox, QOverload<int>::of(&QComboBox::activated), 
         this, &TextSlideshowDock::changeActiveSource);
-    connect(ui->textList, &QListWidget::currentRowChanged, this,
+    connect(ui->textList, &QListWidget::itemClicked, this,
         &TextSlideshowDock::transition);
 
 	obs_frontend_add_event_callback(OBSFrontendEventWrapper, this);
