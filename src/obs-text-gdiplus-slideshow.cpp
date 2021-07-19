@@ -17,6 +17,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 #include <obs-module.h>
+#include <obs-frontend-api.h>
 #include "obs-text-slideshow.h"
 
 // text gdiplus
@@ -181,8 +182,20 @@ static obs_source_t *create_gdiplus(const char *text, obs_data_t *text_ss_settin
 	return source;
 }
 
+static void update_gdiplus_alignment(obs_source_t *transition, 
+		obs_data_t *text_ss_settings) {
+	const char *align_str = obs_data_get_string(text_ss_settings, S_ALIGN);
+	if(strcmp(align_str, S_ALIGN_CENTER) == 0) {
+		obs_transition_set_alignment(transition, OBS_ALIGN_CENTER);
+	} else if(strcmp(align_str, S_ALIGN_RIGHT) == 0) {
+		obs_transition_set_alignment(transition, OBS_ALIGN_RIGHT);
+	} else {
+		obs_transition_set_alignment(transition, OBS_ALIGN_LEFT);
+	}
+}
+
 static void gdiplus_update(void *data, obs_data_t *settings) {
-	text_ss_update(data, settings, create_gdiplus);
+	text_ss_update(data, settings, create_gdiplus, update_gdiplus_alignment);
 }
 
 static void text_defaults(obs_data_t *settings) {
@@ -346,6 +359,24 @@ static obs_properties_t *gdiplus_properties(void *data) {
 	return props;
 }
 
+static bool enum_callback(void *param, obs_source_t *source) {
+	const char *id = obs_source_get_id(source);
+
+	if(strcmp(id, "text-gdiplus-slideshow") == 0) {
+		obs_data_t *settings = obs_source_get_settings(source);
+		obs_source_update(source, settings);
+	}
+	
+	return true;
+}
+
+static void obs_frontend_event_wrapper(enum obs_frontend_event event, 
+        void *ptr) {
+	if(event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
+        obs_enum_sources(enum_callback, NULL);
+	}
+}
+
 void load_text_gdiplus_slideshow() {
 	obs_source_info info = {};
 	info.id = "text-gdiplus-slideshow";
@@ -377,4 +408,5 @@ void load_text_gdiplus_slideshow() {
 	info.media_get_state = text_ss_get_state;
 
 	obs_register_source(&info);
+	obs_frontend_add_event_callback(obs_frontend_event_wrapper, NULL);
 }

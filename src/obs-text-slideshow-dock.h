@@ -44,7 +44,7 @@ class TextSlideshowDock : public QDockWidget {
         void chooseNewActiveSource();
         void updateSources();
         void updateTexts();
-        void transition(int index);
+        void transition(QListWidgetItem *item);
 
         std::unique_ptr<Ui::TextSlideshowDock> ui;
         vector<obs_source_t *> text_slideshows;

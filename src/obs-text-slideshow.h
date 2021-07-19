@@ -97,6 +97,7 @@ enum behavior {
 
 struct text_slideshow {
 	obs_source_t *source;
+	obs_data_t *settings;
 
 	bool randomize;
 	bool loop;
@@ -119,6 +120,8 @@ struct text_slideshow {
 	uint32_t cx;
 	uint32_t cy;
 
+	bool dock_can_get_texts;
+	pthread_cond_t dock_get_texts;
 	pthread_mutex_t mutex;
 	DARRAY(struct text_data) text_srcs;
 
@@ -140,6 +143,8 @@ struct text_slideshow {
 
 typedef obs_source_t *(* text_source_create)(const char *text, 
 		obs_data_t *text_ss_settings);
+typedef void (* set_text_alignment)(obs_source_t *transition,
+		obs_data_t *text_ss_settings);
 
 void play_pause_hotkey(void *data, obs_hotkey_id id,
 	obs_hotkey_t *hotkey, bool pressed);
@@ -154,7 +159,8 @@ void previous_slide_hotkey(void *data, obs_hotkey_id id,
 void text_ss_destroy(void *data);
 void *text_ss_create(obs_data_t *settings, obs_source_t *source);
 void text_ss_update(void *data, obs_data_t *settings,
-	text_source_create text_creator);
+	text_source_create text_creator,
+	set_text_alignment set_alignment);
 void text_ss_activate(void *data);
 void text_ss_deactivate(void *data);
 void text_ss_video_render(void *data, gs_effect_t *effect);
