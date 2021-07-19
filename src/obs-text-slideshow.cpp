@@ -19,6 +19,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "obs-text-slideshow.h"
 #include <vector>
 #include <algorithm>
+#include "files.h"
 
 using std::vector;
 
@@ -305,6 +306,7 @@ static inline size_t random_text_src(struct text_slideshow *text_ss) {
 }
 
 void text_ss_update(void *data, obs_data_t *settings,
+		read_file file_reader,
 		text_source_create text_creator,
 		set_text_alignment set_alignment) {
 	DARRAY(struct text_data) new_text_srcs;
@@ -367,18 +369,46 @@ void text_ss_update(void *data, obs_data_t *settings,
 	array = obs_data_get_array(settings, S_TEXTS);
 	count = obs_data_array_count(array);
 
-	/* ------------------------------------- */
-	/* create new list of sources */
+	text_ss->read_from_file = obs_data_get_bool(settings, S_USE_FILE);
+	if(text_ss->read_from_file) {
+		const char * file = obs_data_get_string(settings, S_FILE);
+		if(strcmp(file, "") != 0) {
+			text_ss->file = file;
 
-	// image-slideshow recreates private sources every update
-	// can also simply update existing source settings if this method is too 
-	// slow
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *item = obs_data_array_item(array, i);
-		const char *curr_text = obs_data_get_string(item, "value");
-		add_text_src(text_ss, &new_text_srcs.da, curr_text, &cx, &cy, 
-			settings, text_creator);
-		obs_data_release(item);
+			time_t modified_timestamp = get_modified_timestamp(file);
+
+			if(text_ss->file_modified == 0 || 
+					text_ss->file_modified != modified_timestamp) {
+
+				text_ss->file_modified = modified_timestamp;
+
+				// read file
+				vector<const char *> texts;
+				(*file_reader)(text_ss, settings, texts);
+
+				// add text source for every text read
+				for(unsigned int i = 0; i < texts.size(); i++) {
+					add_text_src(text_ss, &new_text_srcs.da, texts[i], &cx, &cy, 
+						settings, text_creator);
+					bfree((void *)texts[i]);
+				}
+			}
+		}
+
+
+	} else {
+		text_ss->file_modified = 0;
+
+		// image-slideshow recreates private sources every update
+		// can also simply update existing source settings if this method is too 
+		// slow
+		for (size_t i = 0; i < count; i++) {
+			obs_data_t *item = obs_data_array_item(array, i);
+			const char *curr_text = obs_data_get_string(item, "value");
+			add_text_src(text_ss, &new_text_srcs.da, curr_text, &cx, &cy, 
+				settings, text_creator);
+			obs_data_release(item);
+		}
 	}
 
 	/* ------------------------------------- */
@@ -690,6 +720,7 @@ static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
 	bool use_file = obs_data_get_bool(s, S_USE_FILE);
 
 	set_vis(use_file, S_FILE, true);
+	set_vis(use_file, S_TEXTS, false);
 	return true;
 }
 

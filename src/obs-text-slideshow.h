@@ -16,14 +16,18 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
+#pragma once
+
 #include "obs-module.h"
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <string>
+#include <vector>
 
 using std::string;
+using std::vector;
 
 #define S_TR_SPEED                     "transition_speed"
 #define S_CUSTOM_SIZE                  "use_custom_size"
@@ -127,8 +131,7 @@ struct text_slideshow {
 
 	bool read_from_file = false;
 	string file;
-	time_t file_timestamp = 0;
-	bool update_file = false;
+	time_t file_modified = 0;
 
 	enum behavior behavior;
 
@@ -145,6 +148,8 @@ typedef obs_source_t *(* text_source_create)(const char *text,
 		obs_data_t *text_ss_settings);
 typedef void (* set_text_alignment)(obs_source_t *transition,
 		obs_data_t *text_ss_settings);
+typedef void (* read_file)(struct text_slideshow *text_ss, 
+		obs_data_t *settings, vector<const char *> & texts);
 
 void play_pause_hotkey(void *data, obs_hotkey_id id,
 	obs_hotkey_t *hotkey, bool pressed);
@@ -159,6 +164,7 @@ void previous_slide_hotkey(void *data, obs_hotkey_id id,
 void text_ss_destroy(void *data);
 void *text_ss_create(obs_data_t *settings, obs_source_t *source);
 void text_ss_update(void *data, obs_data_t *settings,
+	read_file file_reader,
 	text_source_create text_creator,
 	set_text_alignment set_alignment);
 void text_ss_activate(void *data);

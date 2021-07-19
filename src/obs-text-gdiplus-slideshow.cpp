@@ -117,6 +117,11 @@ static const char *gdiplus_getname(void *unused) {
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
 #define obs_data_set_uint32 obs_data_set_int
 
+static void gdiplus_read_file(struct text_slideshow *text_ss, 
+		obs_data_t *settings, vector<const char *> & texts) {
+		
+}
+
 static obs_source_t *create_gdiplus(const char *text, obs_data_t *text_ss_settings) {
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source;
@@ -195,7 +200,8 @@ static void update_gdiplus_alignment(obs_source_t *transition,
 }
 
 static void gdiplus_update(void *data, obs_data_t *settings) {
-	text_ss_update(data, settings, create_gdiplus, update_gdiplus_alignment);
+	text_ss_update(data, settings, gdiplus_read_file, create_gdiplus, 
+			update_gdiplus_alignment);
 }
 
 static void text_defaults(obs_data_t *settings) {

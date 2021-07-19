@@ -18,6 +18,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include <obs-module.h>
 #include "obs-text-slideshow.h"
+#include "files.h"
 
 #define S_FONT                         "font"
 #define S_TEXT                         "text"
@@ -66,6 +67,31 @@ static const char *freetype2_getname(void *unused) {
     return obs_module_text("TextFreetype2Slideshow");
 }
 
+static void freetype2_read_file(struct text_slideshow *text_ss, 
+		obs_data_t *settings, vector<const char *> & texts) {
+
+	const char *file_path = text_ss->file.c_str();
+
+	if (!file_path || !*file_path || !os_file_exists(file_path)) {
+		blog(LOG_WARNING,
+				"FT2-text: Failed to open %s for "
+				"reading",
+				file_path);
+	} else {
+		if (!text_ss->file.empty()) {
+			
+			bool chat_log_mode = obs_data_get_bool(settings, S_LOG_MODE);
+
+			text_ss->file = file_path;
+			if (chat_log_mode) {
+				load_text_from_file_end(texts, file_path);
+			} else {
+				load_text_from_file(texts, file_path);
+			}
+		}
+	}
+}
+
 static obs_source_t *create_freetype2(const char *text, obs_data_t *text_ss_settings) {
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source;
@@ -107,7 +133,7 @@ inline static void update_freetype2_alignment(obs_source_t *transition,
 }
 
 static void freetype2_update(void *data, obs_data_t *settings) {
-	text_ss_update(data, settings, create_freetype2, 
+	text_ss_update(data, settings, freetype2_read_file, create_freetype2, 
 		update_freetype2_alignment);
 }
 
