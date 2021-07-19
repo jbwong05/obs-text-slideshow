@@ -93,9 +93,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define T_TRANSFORM                     T_("Transform")
 #define T_ANTIALIASING                  T_("Antialiasing")
 
-#define T_FILTER_TEXT_FILES             T_("Filter.TextFiles")
-#define T_FILTER_ALL_FILES              T_("Filter.AllFiles")
-
 #define T_ALIGN_LEFT                    T_("Alignment.Left")
 #define T_ALIGN_CENTER                  T_("Alignment.Center")
 #define T_ALIGN_RIGHT                   T_("Alignment.Right")
