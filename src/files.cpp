@@ -1,6 +1,5 @@
 #include "files.h"
 #include <util/platform.h>
-#include "obs-module.h"
 
 #define CHUNK_LEN 256
 
@@ -21,7 +20,7 @@ FILE *os_fopen(const char *path, const char *mode) {
 #endif
 }
 
-void load_text_from_file(vector<const char *> & texts, const char *file_path,
+static void load_text_from_file(vector<const char *> & texts, const char *file_path,
 		bool from_end) {
     FILE* file = os_fopen(file_path, "rb"); /* should check the result */
 	if(file == NULL) {
@@ -86,7 +85,34 @@ void load_text_from_file(vector<const char *> & texts, const char *file_path,
     fclose(file);
 }
 
-void load_text_from_file_end(vector<const char *> & texts, 
+static void load_text_from_file_end(vector<const char *> & texts, 
         const char *file_path) {
 	load_text_from_file(texts, file_path, true);
+}
+
+void read_file(struct text_slideshow *text_ss, 
+		obs_data_t *settings, 
+		get_chat_log_mode chat_log_mode_retriever, 
+		vector<const char *> & texts) {
+
+	const char *file_path = text_ss->file.c_str();
+
+	if (!file_path || !*file_path || !os_file_exists(file_path)) {
+		blog(LOG_WARNING,
+				"FT2-text: Failed to open %s for "
+				"reading",
+				file_path);
+	} else {
+		if (!text_ss->file.empty()) {
+			
+			bool chat_log_mode = (*chat_log_mode_retriever)(settings);
+
+			text_ss->file = file_path;
+			if (chat_log_mode) {
+				load_text_from_file_end(texts, file_path);
+			} else {
+				load_text_from_file(texts, file_path, false);
+			}
+		}
+	}
 }

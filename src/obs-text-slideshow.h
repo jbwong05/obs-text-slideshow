@@ -147,8 +147,7 @@ typedef obs_source_t *(* text_source_create)(const char *text,
 		obs_data_t *text_ss_settings);
 typedef void (* set_text_alignment)(obs_source_t *transition,
 		obs_data_t *text_ss_settings);
-typedef void (* read_file)(struct text_slideshow *text_ss, 
-		obs_data_t *settings, vector<const char *> & texts);
+typedef bool (* get_chat_log_mode)(obs_data_t *settings);
 
 void play_pause_hotkey(void *data, obs_hotkey_id id,
 	obs_hotkey_t *hotkey, bool pressed);
@@ -163,7 +162,7 @@ void previous_slide_hotkey(void *data, obs_hotkey_id id,
 void text_ss_destroy(void *data);
 void *text_ss_create(obs_data_t *settings, obs_source_t *source);
 void text_ss_update(void *data, obs_data_t *settings,
-	read_file file_reader,
+	get_chat_log_mode chat_log_mode_retriever,
 	text_source_create text_creator,
 	set_text_alignment set_alignment);
 void text_ss_activate(void *data);

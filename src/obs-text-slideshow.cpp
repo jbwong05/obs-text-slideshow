@@ -306,7 +306,7 @@ static inline size_t random_text_src(struct text_slideshow *text_ss) {
 }
 
 void text_ss_update(void *data, obs_data_t *settings,
-		read_file file_reader,
+		get_chat_log_mode chat_log_mode_retriever,
 		text_source_create text_creator,
 		set_text_alignment set_alignment) {
 	DARRAY(struct text_data) new_text_srcs;
@@ -378,7 +378,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 
 			// read file
 			vector<const char *> texts;
-			(*file_reader)(text_ss, settings, texts);
+			read_file(text_ss, settings, chat_log_mode_retriever, texts);
 
 			// add text source for every text read
 			for(unsigned int i = 0; i < texts.size(); i++) {

@@ -1,10 +1,12 @@
 #pragma once
 
 #include <vector>
+#include "obs-module.h"
+#include "obs-text-slideshow.h"
 
 using std::vector;
 
-void load_text_from_file_end(vector<const char *> & texts, 
-        const char *file_path);
-void load_text_from_file(vector<const char *> & texts, const char *file_path,
-        bool from_end = false);
+void read_file(struct text_slideshow *text_ss, 
+		obs_data_t *settings, 
+        get_chat_log_mode chat_log_mode_retriever, 
+        vector<const char *> & texts);
