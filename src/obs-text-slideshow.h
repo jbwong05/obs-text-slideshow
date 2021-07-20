@@ -131,7 +131,6 @@ struct text_slideshow {
 
 	bool read_from_file = false;
 	string file;
-	time_t file_modified = 0;
 
 	enum behavior behavior;
 

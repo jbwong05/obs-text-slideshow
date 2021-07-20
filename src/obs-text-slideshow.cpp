@@ -370,34 +370,26 @@ void text_ss_update(void *data, obs_data_t *settings,
 	count = obs_data_array_count(array);
 
 	text_ss->read_from_file = obs_data_get_bool(settings, S_USE_FILE);
+
 	if(text_ss->read_from_file) {
 		const char * file = obs_data_get_string(settings, S_FILE);
 		if(strcmp(file, "") != 0) {
 			text_ss->file = file;
 
-			time_t modified_timestamp = get_modified_timestamp(file);
+			// read file
+			vector<const char *> texts;
+			(*file_reader)(text_ss, settings, texts);
 
-			if(text_ss->file_modified == 0 || 
-					text_ss->file_modified != modified_timestamp) {
-
-				text_ss->file_modified = modified_timestamp;
-
-				// read file
-				vector<const char *> texts;
-				(*file_reader)(text_ss, settings, texts);
-
-				// add text source for every text read
-				for(unsigned int i = 0; i < texts.size(); i++) {
-					add_text_src(text_ss, &new_text_srcs.da, texts[i], &cx, &cy, 
-						settings, text_creator);
-					bfree((void *)texts[i]);
-				}
+			// add text source for every text read
+			for(unsigned int i = 0; i < texts.size(); i++) {
+				add_text_src(text_ss, &new_text_srcs.da, texts[i], &cx, &cy, 
+					settings, text_creator);
+				bfree((void *)texts[i]);
 			}
 		}
 
 
 	} else {
-		text_ss->file_modified = 0;
 
 		// image-slideshow recreates private sources every update
 		// can also simply update existing source settings if this method is too 

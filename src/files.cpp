@@ -4,13 +4,6 @@
 
 #define CHUNK_LEN 256
 
-time_t get_modified_timestamp(const char *filename) {
-	struct stat stats;
-	if (os_stat(filename, &stats) != 0)
-		return -1;
-	return stats.st_mtime;
-}
-
 FILE *os_fopen(const char *path, const char *mode) {
 #ifdef _WIN32
 	wchar_t *wpath = NULL;
@@ -39,6 +32,7 @@ void load_text_from_file(vector<const char *> & texts, const char *file_path,
 	unsigned int curr_index = 0;
     char line[CHUNK_LEN];
 	memset(line, 0, CHUNK_LEN);
+	bool add_new_line = true;
 
     while(fgets(line, sizeof(line), file)) {
 		size_t curr_len = strlen(line);
@@ -49,7 +43,7 @@ void load_text_from_file(vector<const char *> & texts, const char *file_path,
 		}
 #endif
 
-		if(texts.size() == curr_index) {
+		if(add_new_line) {
 			// Need to add new string
 			char *curr_text = (char *)bzalloc(curr_len + 1);
 
@@ -85,6 +79,8 @@ void load_text_from_file(vector<const char *> & texts, const char *file_path,
 		if(curr_len != CHUNK_LEN - 1 && !from_end) {
 			curr_index++;
 		}
+
+		add_new_line = line[curr_len] == '\n';
     }
 
     fclose(file);
