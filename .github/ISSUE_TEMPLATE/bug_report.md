@@ -26,6 +26,7 @@ If applicable, add screenshots to help explain your problem.
 **Desktop (please complete the following information):**
  - OS Version: [e.g. Windows, Ubuntu 20.04, macOS 10.14, ...]
  - OBS version
+ - GDI+ Text Slide Show or Free Type 2 Text Slide Show or both
 
 **Additional context**
 Add any other context about the problem here.

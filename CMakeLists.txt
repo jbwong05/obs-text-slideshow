@@ -59,7 +59,8 @@ set(PLUGIN_SOURCES
 	src/plugin-main.cpp
     src/obs-text-freetype2-slideshow.cpp
     src/obs-text-slideshow.cpp
-    src/obs-text-slideshow-dock.cpp)
+    src/obs-text-slideshow-dock.cpp
+    src/files.cpp)
 
 if(WIN32)
     set(PLUGIN_SOURCES 
@@ -70,7 +71,8 @@ endif()
 set(PLUGIN_HEADERS
 	src/plugin-macros.generated.h
     src/obs-text-slideshow.h
-    src/obs-text-slideshow-dock.h)
+    src/obs-text-slideshow-dock.h
+    src/files.h)
 
 qt5_wrap_ui(PLUGIN_UI_HEADERS src/obs-text-slideshow-dock.ui)
 

@@ -19,6 +19,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 #include "obs-text-slideshow.h"
+#include "files.h"
 
 // text gdiplus
 #define S_FONT                          "font"
@@ -93,9 +94,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define T_TRANSFORM                     T_("Transform")
 #define T_ANTIALIASING                  T_("Antialiasing")
 
-#define T_FILTER_TEXT_FILES             T_("Filter.TextFiles")
-#define T_FILTER_ALL_FILES              T_("Filter.AllFiles")
-
 #define T_ALIGN_LEFT                    T_("Alignment.Left")
 #define T_ALIGN_CENTER                  T_("Alignment.Center")
 #define T_ALIGN_RIGHT                   T_("Alignment.Right")
@@ -116,6 +114,10 @@ static const char *gdiplus_getname(void *unused) {
 
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
 #define obs_data_set_uint32 obs_data_set_int
+
+static bool gdiplus_get_chat_log_mode(obs_data_t *settings) {
+	return obs_data_get_bool(settings, S_CHATLOG_MODE);
+}
 
 static obs_source_t *create_gdiplus(const char *text, obs_data_t *text_ss_settings) {
 	obs_data_t *settings = obs_data_create();
@@ -195,7 +197,8 @@ static void update_gdiplus_alignment(obs_source_t *transition,
 }
 
 static void gdiplus_update(void *data, obs_data_t *settings) {
-	text_ss_update(data, settings, create_gdiplus, update_gdiplus_alignment);
+	text_ss_update(data, settings, gdiplus_get_chat_log_mode, create_gdiplus, 
+	update_gdiplus_alignment);
 }
 
 static void text_defaults(obs_data_t *settings) {
@@ -231,21 +234,6 @@ static void text_defaults(obs_data_t *settings) {
 static void gdiplus_defaults(obs_data_t *settings) {
 	ss_defaults(settings);
 	text_defaults(settings);
-}
-
-#define set_vis(var, val, show)                           \
-	do {                                              \
-		p = obs_properties_get(props, val);       \
-		obs_property_set_visible(p, var == show); \
-	} while (false)
-
-static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
-			     obs_data_t *s) {
-	bool use_file = obs_data_get_bool(s, S_USE_FILE);
-
-	set_vis(use_file, S_TEXT, false);
-	set_vis(use_file, S_FILE, true);
-	return true;
 }
 
 static bool outline_changed(obs_properties_t *props, obs_property_t *p,
@@ -367,12 +355,49 @@ static void text_properties(obs_properties_t *props) {
 
 static obs_properties_t *gdiplus_properties(void *data) {
 	obs_properties_t *props = obs_properties_create();
-	struct text_slideshow *text_ss = (text_slideshow *)data;
 	
-	ss_properites(props);
+	ss_properites(data, props);
 	text_properties(props);
 
 	return props;
+}
+
+static void missing_file_callback(void *src, const char *new_path, 
+		void *data) {
+	struct text_slideshow *text_ss = (struct text_slideshow *)src;
+
+	obs_source_t *source = text_ss->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, S_FILE, new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
+static obs_missing_files_t *gdiplus_missing_files(void *data) {
+	struct text_slideshow *text_ss = (struct text_slideshow *)data;
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	obs_source_t *source = text_ss->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+
+	bool read = obs_data_get_bool(settings, S_USE_FILE);
+	const char *path = obs_data_get_string(settings, S_FILE);
+
+	if (read && strcmp(path, "") != 0) {
+		if (!os_file_exists(path)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				path, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, text_ss->source, NULL);
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	obs_data_release(settings);
+
+	return files;
 }
 
 static bool enum_callback(void *param, obs_source_t *source) {
@@ -423,6 +448,7 @@ void load_text_gdiplus_slideshow() {
 	info.media_next = text_ss_next_slide;
 	info.media_previous = text_ss_previous_slide;
 	info.media_get_state = text_ss_get_state;
+	info.missing_files = gdiplus_missing_files;
 
 	obs_register_source(&info);
 	obs_frontend_add_event_callback(obs_frontend_event_wrapper, NULL);

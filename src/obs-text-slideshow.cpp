@@ -18,6 +18,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include "obs-text-slideshow.h"
 #include <vector>
+#include <algorithm>
+#include "files.h"
 
 using std::vector;
 
@@ -304,6 +306,7 @@ static inline size_t random_text_src(struct text_slideshow *text_ss) {
 }
 
 void text_ss_update(void *data, obs_data_t *settings,
+		get_chat_log_mode chat_log_mode_retriever,
 		text_source_create text_creator,
 		set_text_alignment set_alignment) {
 	DARRAY(struct text_data) new_text_srcs;
@@ -366,18 +369,38 @@ void text_ss_update(void *data, obs_data_t *settings,
 	array = obs_data_get_array(settings, S_TEXTS);
 	count = obs_data_array_count(array);
 
-	/* ------------------------------------- */
-	/* create new list of sources */
+	text_ss->read_from_file = obs_data_get_bool(settings, S_USE_FILE);
 
-	// image-slideshow recreates private sources every update
-	// can also simply update existing source settings if this method is too 
-	// slow
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *item = obs_data_array_item(array, i);
-		const char *curr_text = obs_data_get_string(item, "value");
-		add_text_src(text_ss, &new_text_srcs.da, curr_text, &cx, &cy, 
-			settings, text_creator);
-		obs_data_release(item);
+	if(text_ss->read_from_file) {
+		const char * file = obs_data_get_string(settings, S_FILE);
+		if(strcmp(file, "") != 0) {
+			text_ss->file = file;
+
+			// read file
+			vector<const char *> texts;
+			read_file(text_ss, settings, chat_log_mode_retriever, texts);
+
+			// add text source for every text read
+			for(unsigned int i = 0; i < texts.size(); i++) {
+				add_text_src(text_ss, &new_text_srcs.da, texts[i], &cx, &cy, 
+					settings, text_creator);
+				bfree((void *)texts[i]);
+			}
+		}
+
+
+	} else {
+
+		// image-slideshow recreates private sources every update
+		// can also simply update existing source settings if this method is too 
+		// slow
+		for (size_t i = 0; i < count; i++) {
+			obs_data_t *item = obs_data_array_item(array, i);
+			const char *curr_text = obs_data_get_string(item, "value");
+			add_text_src(text_ss, &new_text_srcs.da, curr_text, &cx, &cy, 
+				settings, text_creator);
+			obs_data_release(item);
+		}
 	}
 
 	/* ------------------------------------- */
@@ -684,11 +707,22 @@ static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
 #define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
 
-void ss_properites(obs_properties_t *props) {
+static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
+			     obs_data_t *s) {
+	bool use_file = obs_data_get_bool(s, S_USE_FILE);
+
+	set_vis(use_file, S_FILE, true);
+	set_vis(use_file, S_TEXTS, false);
+	return true;
+}
+
+void ss_properites(void *data, obs_properties_t *props) {
+	struct text_slideshow *text_ss = (text_slideshow *)data;
 	struct obs_video_info ovi;
 	obs_property_t *p;
 	int cx;
 	int cy;
+	string path;
 
 	/* ----------------- */
 
@@ -697,6 +731,28 @@ void ss_properites(obs_properties_t *props) {
 	cy = (int)ovi.base_height;
 
 	/* ----------------- */
+
+	p = obs_properties_add_bool(props, S_USE_FILE, T_USE_FILE);
+	obs_property_set_modified_callback(p, use_file_changed);
+
+	string filter;
+	filter += T_FILTER_TEXT_FILES;
+	filter += " (*.txt);;";
+	filter += T_FILTER_ALL_FILES;
+	filter += " (*.*)";
+
+	if (text_ss && !text_ss->file.empty()) {
+		const char *slash;
+
+		path = text_ss->file;
+		replace(path.begin(), path.end(), '\\', '/');
+		slash = strrchr(path.c_str(), '/');
+		if (slash)
+			path.resize(slash - path.c_str() + 1);
+	}
+
+	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
+				filter.c_str(), path.c_str());
 
 	obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
 					 OBS_EDITABLE_LIST_TYPE_STRINGS,
