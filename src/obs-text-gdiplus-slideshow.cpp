@@ -381,6 +381,7 @@ static bool enum_callback(void *param, obs_source_t *source) {
 	if(strcmp(id, "text-gdiplus-slideshow") == 0) {
 		obs_data_t *settings = obs_source_get_settings(source);
 		obs_source_update(source, settings);
+		obs_data_release(settings);
 	}
 	
 	return true;
