@@ -45,8 +45,8 @@ using std::vector;
 #define S_MODE_AUTO                    "mode_auto"
 #define S_MODE_MANUAL                  "mode_manual"
 
-#define S_USE_FILE                     "read_from_file"
-#define S_FILE                         "file"
+#define S_USE_FILE                     "read_file"
+#define S_FILE                         "txt_file"
 
 #define TR_CUT                         "cut"
 #define TR_FADE                        "fade"

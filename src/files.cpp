@@ -47,11 +47,11 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
     while(fgets(line, sizeof(line), file)) {
 		size_t curr_len = strlen(line);
 
-#ifndef _WIN32
-		if(line[curr_len - 1] == '\n') {
+		if(line[curr_len - 2] == '\r' && line[curr_len - 1] == '\n') {
+			curr_len -= 2;
+		} else if(line[curr_len - 1] == '\n') {
 			curr_len--;
 		}
-#endif
 
 		if(add_new_line) {
 			// Need to add new string
@@ -90,7 +90,8 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
 			curr_index++;
 		}
 
-		add_new_line = line[curr_len] == '\n';
+		add_new_line = (line[curr_len] == '\r' && line[curr_len + 1] == '\n') 
+			|| line[curr_len] == '\n';
     }
 
     fclose(file);
