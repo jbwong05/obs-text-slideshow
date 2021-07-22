@@ -1,5 +1,6 @@
 #include "files.h"
 #include <util/platform.h>
+#include "plugin-macros.generated.h"
 
 #define CHUNK_LEN 256
 
@@ -27,6 +28,16 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
 		blog(LOG_WARNING, "Failed to open file %s", file_path);
 		return;
 	}
+
+	uint16_t header = 0;
+	size_t num_read = fread(&header, 2, 1, file);
+	if(num_read == 1 && (header == 0xFEFF || header == 0xFFFE)) {
+		blog(LOG_WARNING, "UTF-16 not supported for file %s", file_path);
+		fclose(file);
+		return;
+	}
+
+	fseek(file, 0, SEEK_SET);
 
 	unsigned int curr_index = 0;
     char line[CHUNK_LEN];
