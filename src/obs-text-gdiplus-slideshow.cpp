@@ -116,11 +116,6 @@ static const char *gdiplus_getname(void *unused)
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
 #define obs_data_set_uint32 obs_data_set_int
 
-static bool gdiplus_get_chat_log_mode(obs_data_t *settings)
-{
-	return obs_data_get_bool(settings, S_CHATLOG_MODE);
-}
-
 static obs_source_t *create_gdiplus(const char *text,
 				    obs_data_t *text_ss_settings)
 {
@@ -211,8 +206,8 @@ static void update_gdiplus_alignment(obs_source_t *transition,
 
 static void gdiplus_update(void *data, obs_data_t *settings)
 {
-	text_ss_update(data, settings, gdiplus_get_chat_log_mode,
-		       create_gdiplus, update_gdiplus_alignment);
+	text_ss_update(data, settings, create_gdiplus,
+		       update_gdiplus_alignment);
 }
 
 static void text_defaults(obs_data_t *settings)

@@ -68,11 +68,6 @@ static const char *freetype2_getname(void *unused)
 	return obs_module_text("TextFreetype2Slideshow");
 }
 
-static bool freetype2_get_chat_log_mode(obs_data_t *settings)
-{
-	return obs_data_get_bool(settings, S_LOG_MODE);
-}
-
 static obs_source_t *create_freetype2(const char *text,
 				      obs_data_t *text_ss_settings)
 {
@@ -118,8 +113,8 @@ inline static void update_freetype2_alignment(obs_source_t *transition,
 
 static void freetype2_update(void *data, obs_data_t *settings)
 {
-	text_ss_update(data, settings, freetype2_get_chat_log_mode,
-		       create_freetype2, update_freetype2_alignment);
+	text_ss_update(data, settings, create_freetype2,
+		       update_freetype2_alignment);
 }
 
 static void text_defaults(obs_data_t *settings)

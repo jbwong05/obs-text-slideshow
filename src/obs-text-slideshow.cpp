@@ -329,7 +329,6 @@ static inline size_t random_text_src(struct text_slideshow *text_ss)
 }
 
 void text_ss_update(void *data, obs_data_t *settings,
-		    get_chat_log_mode chat_log_mode_retriever,
 		    text_source_create text_creator,
 		    set_text_alignment set_alignment)
 {
@@ -395,33 +394,21 @@ void text_ss_update(void *data, obs_data_t *settings,
 
 	text_ss->read_from_file = obs_data_get_bool(settings, S_READ_FILE);
 
-	bool chat_log_mode = (*chat_log_mode_retriever)(settings);
-
 	if (text_ss->read_from_file) {
 		const char *file = obs_data_get_string(settings, S_TXT_FILE);
 		if (strcmp(file, "") != 0) {
 			text_ss->file = file;
 
 			// read file
-			vector<const char *> texts;
+			vector<char *> texts;
 			read_file(text_ss, settings, texts);
 
 			// add text source for every text read
-			if (chat_log_mode) {
-				for (int i = texts.size() - 1; i >= 0; i--) {
-					add_text_src(text_ss, &new_text_srcs.da,
-						     texts[i], &cx, &cy,
-						     settings, text_creator);
-					bfree((void *)texts[i]);
-				}
-			} else {
-				for (unsigned int i = 0; i < texts.size();
-				     i++) {
-					add_text_src(text_ss, &new_text_srcs.da,
-						     texts[i], &cx, &cy,
-						     settings, text_creator);
-					bfree((void *)texts[i]);
-				}
+			for (unsigned int i = 0; i < texts.size(); i++) {
+				add_text_src(text_ss, &new_text_srcs.da,
+					     texts[i], &cx, &cy, settings,
+					     text_creator);
+				bfree((void *)texts[i]);
 			}
 		}
 

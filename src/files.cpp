@@ -22,8 +22,24 @@ FILE *os_fopen(const char *path, const char *mode)
 #endif
 }
 
-static void load_text_from_file(vector<const char *> &texts,
-				const char *file_path)
+static void remove_new_lines(vector<char *> &texts)
+{
+	// Remove trailing new lines
+	for (unsigned int i = 0; i < texts.size(); i++) {
+		char *curr_text = texts[i];
+		size_t curr_len = strlen(curr_text);
+
+		if (curr_len >= 2 && curr_text[curr_len - 2] == '\r' &&
+		    curr_text[curr_len - 1] == '\n') {
+			curr_text[curr_len - 2] = 0;
+			curr_text[curr_len - 1] = 0;
+		} else if (curr_len >= 1 && curr_text[curr_len - 1] == '\n') {
+			curr_text[curr_len - 1] = 0;
+		}
+	}
+}
+
+static void load_text_from_file(vector<char *> &texts, const char *file_path)
 {
 	FILE *file = os_fopen(file_path, "rb"); /* should check the result */
 	if (file == NULL) {
@@ -50,10 +66,12 @@ static void load_text_from_file(vector<const char *> &texts,
 	while (fgets(line, sizeof(line), file)) {
 		size_t curr_len = strlen(line);
 
-		if (line[curr_len - 2] == '\r' && line[curr_len - 1] == '\n') {
-			curr_len -= 2;
-		} else if (line[curr_len - 1] == '\n') {
-			curr_len--;
+		if ((curr_len == 2 && line[curr_len - 2] == '\r' &&
+		     line[curr_len - 1] == '\n') ||
+		    (curr_len == 1 && line[curr_len - 1] == '\n')) {
+			add_new_line = true;
+			curr_index++;
+			continue;
 		}
 
 		if (add_new_line) {
@@ -71,6 +89,7 @@ static void load_text_from_file(vector<const char *> &texts,
 #endif
 
 			texts.push_back(curr_text);
+			add_new_line = false;
 
 		} else {
 			// Need to append to existing string
@@ -94,21 +113,15 @@ static void load_text_from_file(vector<const char *> &texts,
 			new_ptr[existing_len + curr_len] = 0;
 			texts[curr_index] = new_ptr;
 		}
-
-		if (curr_len != CHUNK_LEN - 1) {
-			curr_index++;
-		}
-
-		add_new_line = (line[curr_len] == '\r' &&
-				line[curr_len + 1] == '\n') ||
-			       line[curr_len] == '\n';
 	}
+
+	remove_new_lines(texts);
 
 	fclose(file);
 }
 
 void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
-	       vector<const char *> &texts)
+	       vector<char *> &texts)
 {
 
 	const char *file_path = text_ss->file.c_str();
