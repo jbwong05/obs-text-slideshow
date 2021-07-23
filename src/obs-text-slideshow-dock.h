@@ -28,31 +28,31 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 using std::vector;
 
 struct slideshow_t {
-    obs_source_t *source;
-    int index;
+	obs_source_t *source;
+	int index;
 };
 
 class TextSlideshowDock : public QDockWidget {
-    Q_OBJECT
+	Q_OBJECT
 
-    private:
-        static void OBSFrontendEventWrapper(enum obs_frontend_event event, 
-            void *ptr);
-        void OBSFrontendEvent(enum obs_frontend_event event);
-        void changeActiveSource(int index);
-        void setActiveSource(int index);
-        void chooseNewActiveSource();
-        void updateSources();
-        void updateTexts();
-        void transition(QListWidgetItem *item);
+private:
+	static void OBSFrontendEventWrapper(enum obs_frontend_event event,
+					    void *ptr);
+	void OBSFrontendEvent(enum obs_frontend_event event);
+	void changeActiveSource(int index);
+	void setActiveSource(int index);
+	void chooseNewActiveSource();
+	void updateSources();
+	void updateTexts();
+	void transition(QListWidgetItem *item);
 
-        std::unique_ptr<Ui::TextSlideshowDock> ui;
-        vector<obs_source_t *> text_slideshows;
-        vector<const char *> texts;
-        struct slideshow_t active_slideshow;
+	std::unique_ptr<Ui::TextSlideshowDock> ui;
+	vector<obs_source_t *> text_slideshows;
+	vector<const char *> texts;
+	struct slideshow_t active_slideshow;
 
-    public:
-        TextSlideshowDock(QWidget *parent = nullptr);
-        ~TextSlideshowDock();
-        void refresh();
+public:
+	TextSlideshowDock(QWidget *parent = nullptr);
+	~TextSlideshowDock();
+	void refresh();
 };

@@ -20,39 +20,39 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "obs-text-slideshow.h"
 #include "files.h"
 
-#define S_FONT                         "font"
-#define S_TEXT                         "text"
-#define S_FROM_FILE                    "from_file"
-#define S_ANTIALIASING                 "antialiasing"
-#define S_LOG_MODE                     "log_mode"
-#define S_LOG_LINES                    "log_lines"
-#define S_TEXT_FILE                    "text_file"
-#define S_COLOR_1                      "color1"
-#define S_COLOR_2                      "color2"
-#define S_OUTLINE                      "outline"
-#define S_DROP_SHADOW                  "drop_shadow"
-#define S_CUSTOM_WIDTH                 "custom_width"
-#define S_WORD_WRAP                    "word_wrap"
-#define S_FACE                         "face"
-#define S_SIZE                         "size"
-#define S_FLAGS                        "flags"
-#define S_STYLE                        "style"
+#define S_FONT "font"
+#define S_TEXT "text"
+#define S_FROM_FILE "from_file"
+#define S_ANTIALIASING "antialiasing"
+#define S_LOG_MODE "log_mode"
+#define S_LOG_LINES "log_lines"
+#define S_TEXT_FILE "text_file"
+#define S_COLOR_1 "color1"
+#define S_COLOR_2 "color2"
+#define S_OUTLINE "outline"
+#define S_DROP_SHADOW "drop_shadow"
+#define S_CUSTOM_WIDTH "custom_width"
+#define S_WORD_WRAP "word_wrap"
+#define S_FACE "face"
+#define S_SIZE "size"
+#define S_FLAGS "flags"
+#define S_STYLE "style"
 
 #define T_TXT_(text) obs_module_text("Text." text)
-#define T_FONT                         T_TXT_("Font")
-#define T_TEXT                         T_TXT_("Text")
-#define T_FROM_FILE                    T_TXT_("ReadFromFile")
-#define T_ANTIALIASING                 T_TXT_("Antialiasing")
-#define T_LOG_MODE                     T_TXT_("ChatLogMode")
-#define T_LOG_LINES                    T_TXT_("ChatLogLines")
-#define T_TEXT_FILE                    T_TXT_("TextFile")
-#define T_TEXT_FILE_FILTER             T_TXT_("TextFileFilter")
-#define T_COLOR_1                      T_TXT_("Color1")
-#define T_COLOR_2                      T_TXT_("Color2")
-#define T_OUTLINE                      T_TXT_("Outline")
-#define T_DROP_SHADOW                  T_TXT_("DropShadow")
-#define T_CUSTOM_WIDTH                 T_TXT_("CustomWidth")
-#define T_WORD_WRAP                    T_TXT_("WordWrap")
+#define T_FONT T_TXT_("Font")
+#define T_TEXT T_TXT_("Text")
+#define T_FROM_FILE T_TXT_("ReadFromFile")
+#define T_ANTIALIASING T_TXT_("Antialiasing")
+#define T_LOG_MODE T_TXT_("ChatLogMode")
+#define T_LOG_LINES T_TXT_("ChatLogLines")
+#define T_TEXT_FILE T_TXT_("TextFile")
+#define T_TEXT_FILE_FILTER T_TXT_("TextFileFilter")
+#define T_COLOR_1 T_TXT_("Color1")
+#define T_COLOR_2 T_TXT_("Color2")
+#define T_OUTLINE T_TXT_("Outline")
+#define T_DROP_SHADOW T_TXT_("DropShadow")
+#define T_CUSTOM_WIDTH T_TXT_("CustomWidth")
+#define T_WORD_WRAP T_TXT_("WordWrap")
 
 #ifdef _WIN32
 #define DEFAULT_FACE "Arial"
@@ -62,41 +62,44 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define DEFAULT_FACE "Sans Serif"
 #endif
 
-static const char *freetype2_getname(void *unused) {
-    UNUSED_PARAMETER(unused);
-    return obs_module_text("TextFreetype2Slideshow");
+static const char *freetype2_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("TextFreetype2Slideshow");
 }
 
-static bool freetype2_get_chat_log_mode(obs_data_t *settings) {
+static bool freetype2_get_chat_log_mode(obs_data_t *settings)
+{
 	return obs_data_get_bool(settings, S_LOG_MODE);
 }
 
-static obs_source_t *create_freetype2(const char *text, 
-		obs_data_t *text_ss_settings) {
+static obs_source_t *create_freetype2(const char *text,
+				      obs_data_t *text_ss_settings)
+{
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source;
 	obs_data_t *curr_font = obs_data_get_obj(text_ss_settings, S_FONT);
 
 	obs_data_set_obj(settings, S_FONT, curr_font);
-	obs_data_set_bool(settings, S_DROP_SHADOW, 
-		obs_data_get_bool(text_ss_settings, S_DROP_SHADOW));
-	obs_data_set_bool(settings, S_OUTLINE, 
-		obs_data_get_bool(text_ss_settings, S_OUTLINE));
-	obs_data_set_bool(settings, S_WORD_WRAP, 
-		obs_data_get_bool(text_ss_settings, S_WORD_WRAP));
-	obs_data_set_int(settings, S_COLOR_1, 
-		obs_data_get_int(text_ss_settings, S_COLOR_1));
-	obs_data_set_int(settings, S_COLOR_2, 
-		obs_data_get_int(text_ss_settings, S_COLOR_2));
-	obs_data_set_int(settings, S_CUSTOM_WIDTH, 
-		obs_data_get_int(text_ss_settings, S_CUSTOM_WIDTH));
+	obs_data_set_bool(settings, S_DROP_SHADOW,
+			  obs_data_get_bool(text_ss_settings, S_DROP_SHADOW));
+	obs_data_set_bool(settings, S_OUTLINE,
+			  obs_data_get_bool(text_ss_settings, S_OUTLINE));
+	obs_data_set_bool(settings, S_WORD_WRAP,
+			  obs_data_get_bool(text_ss_settings, S_WORD_WRAP));
+	obs_data_set_int(settings, S_COLOR_1,
+			 obs_data_get_int(text_ss_settings, S_COLOR_1));
+	obs_data_set_int(settings, S_COLOR_2,
+			 obs_data_get_int(text_ss_settings, S_COLOR_2));
+	obs_data_set_int(settings, S_CUSTOM_WIDTH,
+			 obs_data_get_int(text_ss_settings, S_CUSTOM_WIDTH));
 	obs_data_set_bool(settings, S_FROM_FILE, false);
-	obs_data_set_bool(settings, S_LOG_MODE, 
-		obs_data_get_bool(text_ss_settings, S_LOG_MODE));
-	obs_data_set_int(settings, S_LOG_LINES, 
-		obs_data_get_int(text_ss_settings, S_LOG_LINES));
-	obs_data_set_bool(settings, S_ANTIALIASING, 
-		obs_data_get_bool(text_ss_settings, S_ANTIALIASING));
+	obs_data_set_bool(settings, S_LOG_MODE,
+			  obs_data_get_bool(text_ss_settings, S_LOG_MODE));
+	obs_data_set_int(settings, S_LOG_LINES,
+			 obs_data_get_int(text_ss_settings, S_LOG_LINES));
+	obs_data_set_bool(settings, S_ANTIALIASING,
+			  obs_data_get_bool(text_ss_settings, S_ANTIALIASING));
 	obs_data_set_string(settings, S_TEXT_FILE, "");
 	obs_data_set_string(settings, S_TEXT, text);
 	source = obs_source_create_private("text_ft2_source", text, settings);
@@ -107,17 +110,20 @@ static obs_source_t *create_freetype2(const char *text,
 	return source;
 }
 
-inline static void update_freetype2_alignment(obs_source_t *transition, 
-		obs_data_t *text_ss_settings) {
+inline static void update_freetype2_alignment(obs_source_t *transition,
+					      obs_data_t *text_ss_settings)
+{
 	obs_transition_set_alignment(transition, OBS_ALIGN_CENTER);
 }
 
-static void freetype2_update(void *data, obs_data_t *settings) {
-	text_ss_update(data, settings, freetype2_get_chat_log_mode, 
-	create_freetype2, update_freetype2_alignment);
+static void freetype2_update(void *data, obs_data_t *settings)
+{
+	text_ss_update(data, settings, freetype2_get_chat_log_mode,
+		       create_freetype2, update_freetype2_alignment);
 }
 
-static void text_defaults(obs_data_t *settings) {
+static void text_defaults(obs_data_t *settings)
+{
 	obs_data_t *font_obj = obs_data_create();
 
 	// Currently only supporting text freetype2
@@ -142,12 +148,14 @@ static void text_defaults(obs_data_t *settings) {
 	obs_data_release(font_obj);
 }
 
-static void freetype2_defaults(obs_data_t *settings) {
+static void freetype2_defaults(obs_data_t *settings)
+{
 	ss_defaults(settings);
 	text_defaults(settings);
 }
 
-static void text_properties(obs_properties_t *props) {
+static void text_properties(obs_properties_t *props)
+{
 	// TODO:
 	//	Scrolling. Can't think of a way to do it with the render
 	//		targets currently being broken. (0.4.2)
@@ -156,14 +164,11 @@ static void text_properties(obs_properties_t *props) {
 
 	obs_properties_add_font(props, S_FONT, T_FONT);
 
-	obs_properties_add_bool(props, S_ANTIALIASING,
-				T_ANTIALIASING);
+	obs_properties_add_bool(props, S_ANTIALIASING, T_ANTIALIASING);
 
-	obs_properties_add_bool(props, S_LOG_MODE,
-				T_LOG_MODE);
+	obs_properties_add_bool(props, S_LOG_MODE, T_LOG_MODE);
 
-	obs_properties_add_int(props, S_LOG_LINES,
-			       T_LOG_LINES, 1, 1000, 1);
+	obs_properties_add_int(props, S_LOG_LINES, T_LOG_LINES, 1, 1000, 1);
 
 	obs_properties_add_color(props, S_COLOR_1, T_COLOR_1);
 
@@ -171,27 +176,26 @@ static void text_properties(obs_properties_t *props) {
 
 	obs_properties_add_bool(props, S_OUTLINE, T_OUTLINE);
 
-	obs_properties_add_bool(props, S_DROP_SHADOW,
-				T_DROP_SHADOW);
+	obs_properties_add_bool(props, S_DROP_SHADOW, T_DROP_SHADOW);
 
-	obs_properties_add_int(props, S_CUSTOM_WIDTH,
-			       T_CUSTOM_WIDTH, 0, 4096, 1);
+	obs_properties_add_int(props, S_CUSTOM_WIDTH, T_CUSTOM_WIDTH, 0, 4096,
+			       1);
 
-	obs_properties_add_bool(props, S_WORD_WRAP,
-				T_WORD_WRAP);
+	obs_properties_add_bool(props, S_WORD_WRAP, T_WORD_WRAP);
 }
 
-static obs_properties_t *freetype2_properties(void *data) {
+static obs_properties_t *freetype2_properties(void *data)
+{
 	obs_properties_t *props = obs_properties_create();
-	
+
 	ss_properites(data, props);
 	text_properties(props);
 
 	return props;
 }
 
-static void missing_file_callback(void *src, const char *new_path, 
-		void *data) {
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
 	struct text_slideshow *text_ss = (struct text_slideshow *)src;
 
 	obs_source_t *source = text_ss->source;
@@ -203,7 +207,8 @@ static void missing_file_callback(void *src, const char *new_path,
 	UNUSED_PARAMETER(data);
 }
 
-static obs_missing_files_t *freetype2_missing_files(void *data) {
+static obs_missing_files_t *freetype2_missing_files(void *data)
+{
 	struct text_slideshow *text_ss = (struct text_slideshow *)data;
 	obs_missing_files_t *files = obs_missing_files_create();
 
@@ -228,16 +233,17 @@ static obs_missing_files_t *freetype2_missing_files(void *data) {
 	return files;
 }
 
-void load_text_freetype2_slideshow() {
+void load_text_freetype2_slideshow()
+{
 	obs_source_info info = {};
 	info.id = "text-freetype2-slideshow";
 	info.type = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_COMPOSITE | 
+			    OBS_SOURCE_COMPOSITE |
 #ifdef _WIN32
-			OBS_SOURCE_DEPRECATED |
+			    OBS_SOURCE_DEPRECATED |
 #endif
-			OBS_SOURCE_CONTROLLABLE_MEDIA;
+			    OBS_SOURCE_CONTROLLABLE_MEDIA;
 	info.get_properties = freetype2_properties;
 	info.icon_type = OBS_ICON_TYPE_SLIDESHOW;
 	info.get_name = freetype2_getname;

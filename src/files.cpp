@@ -4,7 +4,8 @@
 
 #define CHUNK_LEN 256
 
-FILE *os_fopen(const char *path, const char *mode) {
+FILE *os_fopen(const char *path, const char *mode)
+{
 #ifdef _WIN32
 	wchar_t *wpath = NULL;
 	FILE *file = NULL;
@@ -21,18 +22,20 @@ FILE *os_fopen(const char *path, const char *mode) {
 #endif
 }
 
-static void load_text_from_file(vector<const char *> & texts, const char *file_path,
-		bool from_end) {
-    FILE* file = os_fopen(file_path, "rb"); /* should check the result */
-	if(file == NULL) {
+static void load_text_from_file(vector<const char *> &texts,
+				const char *file_path, bool from_end)
+{
+	FILE *file = os_fopen(file_path, "rb"); /* should check the result */
+	if (file == NULL) {
 		blog(LOG_WARNING, "Failed to open file %s", file_path);
 		return;
 	}
 
 	uint16_t header = 0;
 	size_t num_read = fread(&header, 2, 1, file);
-	if(num_read == 1 && (header == 0xFEFF || header == 0xFFFE)) {
-		blog(LOG_WARNING, "UTF-16 not supported for file %s", file_path);
+	if (num_read == 1 && (header == 0xFEFF || header == 0xFFFE)) {
+		blog(LOG_WARNING, "UTF-16 not supported for file %s",
+		     file_path);
 		fclose(file);
 		return;
 	}
@@ -40,24 +43,24 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
 	fseek(file, 0, SEEK_SET);
 
 	unsigned int curr_index = 0;
-    char line[CHUNK_LEN];
+	char line[CHUNK_LEN];
 	memset(line, 0, CHUNK_LEN);
 	bool add_new_line = true;
 
-    while(fgets(line, sizeof(line), file)) {
+	while (fgets(line, sizeof(line), file)) {
 		size_t curr_len = strlen(line);
 
-		if(line[curr_len - 2] == '\r' && line[curr_len - 1] == '\n') {
+		if (line[curr_len - 2] == '\r' && line[curr_len - 1] == '\n') {
 			curr_len -= 2;
-		} else if(line[curr_len - 1] == '\n') {
+		} else if (line[curr_len - 1] == '\n') {
 			curr_len--;
 		}
 
-		if(add_new_line) {
+		if (add_new_line) {
 			// Need to add new string
 			char *curr_text = (char *)bzalloc(curr_len + 1);
 
-			if(curr_text == NULL) {
+			if (curr_text == NULL) {
 				fclose(file);
 				return;
 			}
@@ -67,25 +70,27 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
 			strncpy(curr_text, line, curr_len);
 #endif
 
-			if(from_end) {
+			if (from_end) {
 				texts.insert(texts.begin(), curr_text);
 			} else {
 				texts.push_back(curr_text);
 			}
-			
+
 		} else {
 			// Need to append to existing string
 			size_t existing_len = strlen(texts[curr_index]);
-			char *new_ptr = (char *)brealloc((void *)texts[curr_index], 
-					existing_len + curr_len + 1);
-			
-			if(new_ptr == NULL) {
+			char *new_ptr =
+				(char *)brealloc((void *)texts[curr_index],
+						 existing_len + curr_len + 1);
+
+			if (new_ptr == NULL) {
 				fclose(file);
 				return;
 			}
 
 #ifdef _WIN32
-			strncpy_s(new_ptr + existing_len, curr_len + 1, line, curr_len);
+			strncpy_s(new_ptr + existing_len, curr_len + 1, line,
+				  curr_len);
 #else
 			strncpy(new_ptr + existing_len, line, curr_len);
 #endif
@@ -94,38 +99,41 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
 			texts[curr_index] = new_ptr;
 		}
 
-		if(curr_len != CHUNK_LEN - 1 && !from_end) {
+		if (curr_len != CHUNK_LEN - 1 && !from_end) {
 			curr_index++;
 		}
 
-		add_new_line = (line[curr_len] == '\r' && line[curr_len + 1] == '\n') 
-			|| line[curr_len] == '\n';
-    }
+		add_new_line = (line[curr_len] == '\r' &&
+				line[curr_len + 1] == '\n') ||
+			       line[curr_len] == '\n';
+	}
 
-    fclose(file);
+	fclose(file);
 }
 
-static void load_text_from_file_end(vector<const char *> & texts, 
-        const char *file_path) {
+static void load_text_from_file_end(vector<const char *> &texts,
+				    const char *file_path)
+{
 	load_text_from_file(texts, file_path, true);
 }
 
-void read_file(struct text_slideshow *text_ss, 
-		obs_data_t *settings, 
-		get_chat_log_mode chat_log_mode_retriever, 
-		vector<const char *> & texts) {
+void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
+	       get_chat_log_mode chat_log_mode_retriever,
+	       vector<const char *> &texts)
+{
 
 	const char *file_path = text_ss->file.c_str();
 
 	if (!file_path || !*file_path || !os_file_exists(file_path)) {
 		blog(LOG_WARNING,
-				"FT2-text: Failed to open %s for "
-				"reading",
-				file_path);
+		     "FT2-text: Failed to open %s for "
+		     "reading",
+		     file_path);
 	} else {
 		if (!text_ss->file.empty()) {
-			
-			bool chat_log_mode = (*chat_log_mode_retriever)(settings);
+
+			bool chat_log_mode =
+				(*chat_log_mode_retriever)(settings);
 
 			text_ss->file = file_path;
 			if (chat_log_mode) {
