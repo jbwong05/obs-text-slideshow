@@ -82,7 +82,7 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
 			}
 
 			strncpy(new_ptr + existing_len, line, curr_len);
-			new_ptr[existing_len + curr_len + 1] = 0;
+			new_ptr[existing_len + curr_len] = 0;
 			texts[curr_index] = new_ptr;
 		}
 
