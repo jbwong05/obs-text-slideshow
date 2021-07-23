@@ -82,7 +82,8 @@ void TextSlideshowDock::chooseNewActiveSource() {
     } else {
         active_slideshow.source = NULL;
         // Find first that is not hidden
-        for(int i = 0; i < text_slideshows.size() && !active_slideshow.source; i++) {
+        for(unsigned int i = 0; i < text_slideshows.size() && 
+                !active_slideshow.source; i++) {
             if(!obs_source_is_hidden(text_slideshows[i])) {
                 setActiveSource(i);
                 return;
@@ -109,7 +110,7 @@ void TextSlideshowDock::updateSources() {
 
     active_slideshow.index = -1;
 
-    for(int i = 0; i < text_slideshows.size(); i++) {
+    for(unsigned int i = 0; i < text_slideshows.size(); i++) {
         const char *name = obs_source_get_name(text_slideshows[i]);
         ui->sourceBox->addItem(name);
 
@@ -132,7 +133,7 @@ void TextSlideshowDock::updateTexts() {
     calldata_free(&cd);
 
     ui->textList->clear();
-    for(int i = 0; i < texts.size(); i++) {
+    for(unsigned int i = 0; i < texts.size(); i++) {
         ui->textList->addItem(texts[i]);
     }
 }
