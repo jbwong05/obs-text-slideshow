@@ -7,5 +7,4 @@
 using std::vector;
 
 void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
-	       get_chat_log_mode chat_log_mode_retriever,
 	       vector<const char *> &texts);

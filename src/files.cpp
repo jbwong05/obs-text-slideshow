@@ -23,7 +23,7 @@ FILE *os_fopen(const char *path, const char *mode)
 }
 
 static void load_text_from_file(vector<const char *> &texts,
-				const char *file_path, bool from_end)
+				const char *file_path)
 {
 	FILE *file = os_fopen(file_path, "rb"); /* should check the result */
 	if (file == NULL) {
@@ -70,11 +70,7 @@ static void load_text_from_file(vector<const char *> &texts,
 			strncpy(curr_text, line, curr_len);
 #endif
 
-			if (from_end) {
-				texts.insert(texts.begin(), curr_text);
-			} else {
-				texts.push_back(curr_text);
-			}
+			texts.push_back(curr_text);
 
 		} else {
 			// Need to append to existing string
@@ -99,7 +95,7 @@ static void load_text_from_file(vector<const char *> &texts,
 			texts[curr_index] = new_ptr;
 		}
 
-		if (curr_len != CHUNK_LEN - 1 && !from_end) {
+		if (curr_len != CHUNK_LEN - 1) {
 			curr_index++;
 		}
 
@@ -111,14 +107,7 @@ static void load_text_from_file(vector<const char *> &texts,
 	fclose(file);
 }
 
-static void load_text_from_file_end(vector<const char *> &texts,
-				    const char *file_path)
-{
-	load_text_from_file(texts, file_path, true);
-}
-
 void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
-	       get_chat_log_mode chat_log_mode_retriever,
 	       vector<const char *> &texts)
 {
 
@@ -132,15 +121,8 @@ void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
 	} else {
 		if (!text_ss->file.empty()) {
 
-			bool chat_log_mode =
-				(*chat_log_mode_retriever)(settings);
-
 			text_ss->file = file_path;
-			if (chat_log_mode) {
-				load_text_from_file_end(texts, file_path);
-			} else {
-				load_text_from_file(texts, file_path, false);
-			}
+			load_text_from_file(texts, file_path);
 		}
 	}
 }
