@@ -4,24 +4,6 @@
 
 #define CHUNK_LEN 256
 
-FILE *os_fopen(const char *path, const char *mode)
-{
-#ifdef _WIN32
-	wchar_t *wpath = NULL;
-	FILE *file = NULL;
-
-	if (path) {
-		os_utf8_to_wcs_ptr(path, 0, &wpath);
-		file = os_wfopen(wpath, mode);
-		bfree(wpath);
-	}
-
-	return file;
-#else
-	return path ? fopen(path, mode) : NULL;
-#endif
-}
-
 static void remove_new_lines(vector<char *> &texts)
 {
 	// Remove trailing new lines
