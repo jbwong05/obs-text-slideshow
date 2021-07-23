@@ -61,8 +61,11 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
 				fclose(file);
 				return;
 			}
-
+#ifdef _WIN32
+			strncpy_s(curr_text, curr_len + 1, line, curr_len);
+#else
 			strncpy(curr_text, line, curr_len);
+#endif
 
 			if(from_end) {
 				texts.insert(texts.begin(), curr_text);
@@ -81,7 +84,12 @@ static void load_text_from_file(vector<const char *> & texts, const char *file_p
 				return;
 			}
 
+#ifdef _WIN32
+			strncpy_s(new_ptr + existing_len, curr_len + 1, line, curr_len);
+#else
 			strncpy(new_ptr + existing_len, line, curr_len);
+#endif
+
 			new_ptr[existing_len + curr_len] = 0;
 			texts[curr_index] = new_ptr;
 		}

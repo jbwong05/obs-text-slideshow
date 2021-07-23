@@ -369,10 +369,10 @@ void text_ss_update(void *data, obs_data_t *settings,
 	array = obs_data_get_array(settings, S_TEXTS);
 	count = obs_data_array_count(array);
 
-	text_ss->read_from_file = obs_data_get_bool(settings, S_USE_FILE);
+	text_ss->read_from_file = obs_data_get_bool(settings, S_READ_FILE);
 
 	if(text_ss->read_from_file) {
-		const char * file = obs_data_get_string(settings, S_FILE);
+		const char * file = obs_data_get_string(settings, S_TXT_FILE);
 		if(strcmp(file, "") != 0) {
 			text_ss->file = file;
 
@@ -448,12 +448,20 @@ void text_ss_update(void *data, obs_data_t *settings,
 	int cx_in = 0, cy_in = 0;
 
 	if (strcmp(res_str, T_CUSTOM_SIZE_AUTO) != 0) {
+#ifdef _WIN32
+		int ret = sscanf_s(res_str, "%dx%d", &cx_in, &cy_in);
+#else
 		int ret = sscanf(res_str, "%dx%d", &cx_in, &cy_in);
+#endif
 		if (ret == 2) {
 			aspect_only = false;
 			use_auto = false;
 		} else {
+#ifdef _WIN32
+			ret = sscanf_s(res_str, "%d:%d", &cx_in, &cy_in); 
+#else
 			ret = sscanf(res_str, "%d:%d", &cx_in, &cy_in);
+#endif
 			if (ret == 2) {
 				aspect_only = true;
 				use_auto = false;
@@ -709,9 +717,9 @@ static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
 static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
 			     obs_data_t *s) {
-	bool use_file = obs_data_get_bool(s, S_USE_FILE);
+	bool use_file = obs_data_get_bool(s, S_READ_FILE);
 
-	set_vis(use_file, S_FILE, true);
+	set_vis(use_file, S_TXT_FILE, true);
 	set_vis(use_file, S_TEXTS, false);
 	return true;
 }
@@ -732,7 +740,7 @@ void ss_properites(void *data, obs_properties_t *props) {
 
 	/* ----------------- */
 
-	p = obs_properties_add_bool(props, S_USE_FILE, T_USE_FILE);
+	p = obs_properties_add_bool(props, S_READ_FILE, T_USE_FILE);
 	obs_property_set_modified_callback(p, use_file_changed);
 
 	string filter;
@@ -751,7 +759,7 @@ void ss_properites(void *data, obs_properties_t *props) {
 			path.resize(slash - path.c_str() + 1);
 	}
 
-	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
+	obs_properties_add_path(props, S_TXT_FILE, T_FILE, OBS_PATH_FILE,
 				filter.c_str(), path.c_str());
 
 	obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
