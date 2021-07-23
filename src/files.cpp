@@ -110,7 +110,7 @@ void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
 
 	if (!file_path || !*file_path || !os_file_exists(file_path)) {
 		blog(LOG_WARNING,
-		     "FT2-text: Failed to open %s for "
+		     "Failed to open %s for "
 		     "reading",
 		     file_path);
 	} else {
