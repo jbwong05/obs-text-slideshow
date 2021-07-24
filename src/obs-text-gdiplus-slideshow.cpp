@@ -116,7 +116,7 @@ static const char *gdiplus_getname(void *unused)
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
 #define obs_data_set_uint32 obs_data_set_int
 
-static obs_source_t *create_gdiplus(const char *text,
+static obs_source_t *create_gdiplus(const char *file_path, const char *text,
 				    obs_data_t *text_ss_settings)
 {
 	obs_data_t *settings = obs_data_create();
@@ -157,8 +157,8 @@ static obs_source_t *create_gdiplus(const char *text,
 	obs_data_set_uint32(settings, S_OUTLINE_SIZE,
 			    obs_data_get_uint32(text_ss_settings,
 						S_OUTLINE_SIZE));
-	obs_data_set_bool(settings, S_USE_FILE, false);
-	obs_data_set_string(settings, S_FILE, "");
+	obs_data_set_bool(settings, S_USE_FILE, file_path);
+	obs_data_set_string(settings, S_FILE, file_path);
 	obs_data_set_bool(settings, S_CHATLOG_MODE,
 			  obs_data_get_bool(text_ss_settings, S_CHATLOG_MODE));
 	obs_data_set_int(settings, S_CHATLOG_LINES,
@@ -252,9 +252,9 @@ static bool outline_changed(obs_properties_t *props, obs_property_t *p,
 {
 	bool outline = obs_data_get_bool(s, S_OUTLINE);
 
-	set_vis(outline, S_OUTLINE_SIZE, true);
-	set_vis(outline, S_OUTLINE_COLOR, true);
-	set_vis(outline, S_OUTLINE_OPACITY, true);
+	set_vis(S_OUTLINE_SIZE, outline);
+	set_vis(S_OUTLINE_COLOR, outline);
+	set_vis(S_OUTLINE_OPACITY, outline);
 	return true;
 }
 
@@ -263,7 +263,7 @@ static bool chatlog_mode_changed(obs_properties_t *props, obs_property_t *p,
 {
 	bool chatlog_mode = obs_data_get_bool(s, S_CHATLOG_MODE);
 
-	set_vis(chatlog_mode, S_CHATLOG_LINES, true);
+	set_vis(S_CHATLOG_LINES, chatlog_mode);
 	return true;
 }
 
@@ -272,9 +272,9 @@ static bool gradient_changed(obs_properties_t *props, obs_property_t *p,
 {
 	bool gradient = obs_data_get_bool(s, S_GRADIENT);
 
-	set_vis(gradient, S_GRADIENT_COLOR, true);
-	set_vis(gradient, S_GRADIENT_OPACITY, true);
-	set_vis(gradient, S_GRADIENT_DIR, true);
+	set_vis(S_GRADIENT_COLOR, gradient);
+	set_vis(S_GRADIENT_OPACITY, gradient);
+	set_vis(S_GRADIENT_DIR, gradient);
 	return true;
 }
 
@@ -283,9 +283,9 @@ static bool extents_modified(obs_properties_t *props, obs_property_t *p,
 {
 	bool use_extents = obs_data_get_bool(s, S_EXTENTS);
 
-	set_vis(use_extents, S_EXTENTS_WRAP, true);
-	set_vis(use_extents, S_EXTENTS_CX, true);
-	set_vis(use_extents, S_EXTENTS_CY, true);
+	set_vis(S_EXTENTS_WRAP, use_extents);
+	set_vis(S_EXTENTS_CX, use_extents);
+	set_vis(S_EXTENTS_CY, use_extents);
 	return true;
 }
 

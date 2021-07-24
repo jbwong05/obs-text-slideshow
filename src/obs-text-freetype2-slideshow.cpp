@@ -68,7 +68,7 @@ static const char *freetype2_getname(void *unused)
 	return obs_module_text("TextFreetype2Slideshow");
 }
 
-static obs_source_t *create_freetype2(const char *text,
+static obs_source_t *create_freetype2(const char *file_path, const char *text,
 				      obs_data_t *text_ss_settings)
 {
 	obs_data_t *settings = obs_data_create();
@@ -88,14 +88,14 @@ static obs_source_t *create_freetype2(const char *text,
 			 obs_data_get_int(text_ss_settings, S_COLOR_2));
 	obs_data_set_int(settings, S_CUSTOM_WIDTH,
 			 obs_data_get_int(text_ss_settings, S_CUSTOM_WIDTH));
-	obs_data_set_bool(settings, S_FROM_FILE, false);
+	obs_data_set_bool(settings, S_FROM_FILE, file_path);
 	obs_data_set_bool(settings, S_LOG_MODE,
 			  obs_data_get_bool(text_ss_settings, S_LOG_MODE));
 	obs_data_set_int(settings, S_LOG_LINES,
 			 obs_data_get_int(text_ss_settings, S_LOG_LINES));
 	obs_data_set_bool(settings, S_ANTIALIASING,
 			  obs_data_get_bool(text_ss_settings, S_ANTIALIASING));
-	obs_data_set_string(settings, S_TEXT_FILE, "");
+	obs_data_set_string(settings, S_TEXT_FILE, file_path);
 	obs_data_set_string(settings, S_TEXT, text);
 	source = obs_source_create_private("text_ft2_source", text, settings);
 

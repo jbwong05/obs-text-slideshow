@@ -45,8 +45,10 @@ using std::vector;
 #define S_MODE_AUTO "mode_auto"
 #define S_MODE_MANUAL "mode_manual"
 
-#define S_READ_FILE "read_file"
+#define S_READ_SINGLE_FILE "read_single_file"
 #define S_TXT_FILE "txt_file"
+#define S_READ_MULTIPLE_FILES "read_multiple_files"
+#define S_FILES "files"
 
 #define TR_CUT "cut"
 #define TR_FADE "fade"
@@ -71,10 +73,12 @@ using std::vector;
 #define T_MODE_AUTO T_SS_("SlideMode.Auto")
 #define T_MODE_MANUAL T_SS_("SlideMode.Manual")
 
-#define T_USE_FILE T_SS_("ReadFromFile")
+#define T_USE_SINGLE_FILE T_SS_("ReadFromSingleFile")
 #define T_FILE T_SS_("TextFile")
 #define T_FILTER_TEXT_FILES T_SS_("Filter.TextFiles")
 #define T_FILTER_ALL_FILES T_SS_("Filter.AllFiles")
+#define T_USE_MULTIPLE_FILE T_SS_("ReadFromMultipleFiles")
+#define T_FILES T_SS_("Files")
 
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 #define T_TR_CUT T_TR_("Cut")
@@ -82,13 +86,14 @@ using std::vector;
 #define T_TR_SWIPE T_TR_("Swipe")
 #define T_TR_SLIDE T_TR_("Slide")
 
-#define set_vis(var, val, show)                           \
+#define set_vis(val, show)                           \
 	do {                                              \
 		p = obs_properties_get(props, val);       \
-		obs_property_set_visible(p, var == show); \
+		obs_property_set_visible(p, show); \
 	} while (false)
 
 struct text_data {
+	char *file_path;
 	char *text;
 	obs_source_t *source;
 };
@@ -129,8 +134,9 @@ struct text_slideshow {
 	pthread_mutex_t mutex;
 	DARRAY(struct text_data) text_srcs;
 
-	bool read_from_file = false;
+	bool read_from_single_file = false;
 	string file;
+	bool read_from_multiple_files = false;
 
 	enum behavior behavior;
 
@@ -143,7 +149,7 @@ struct text_slideshow {
 	enum obs_media_state state;
 };
 
-typedef obs_source_t *(*text_source_create)(const char *text,
+typedef obs_source_t *(*text_source_create)(const char *path, const char *text,
 					    obs_data_t *text_ss_settings);
 typedef void (*set_text_alignment)(obs_source_t *transition,
 				   obs_data_t *text_ss_settings);

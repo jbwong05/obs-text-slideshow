@@ -89,7 +89,7 @@ void previous_slide_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		obs_source_media_previous(text_ss->source);
 }
 
-static obs_source_t *get_source(struct darray *array, const char *text)
+static obs_source_t *get_source(struct darray *array, const char *file_path, const char *text)
 {
 	DARRAY(struct text_data) text_srcs;
 	obs_source_t *source = NULL;
@@ -97,9 +97,14 @@ static obs_source_t *get_source(struct darray *array, const char *text)
 	text_srcs.da = *array;
 
 	for (size_t i = 0; i < text_srcs.num; i++) {
+		const char *curr_file_path = text_srcs.array[i].file_path;
 		const char *curr_text = text_srcs.array[i].text;
 
-		if (strcmp(text, curr_text) == 0) {
+		if(file_path && curr_file_path && strcmp(file_path, curr_file_path) == 0) {
+			source = text_srcs.array[i].source;
+			obs_source_addref(source);
+			break;
+		} else if (text && curr_text && strcmp(text, curr_text) == 0) {
 			source = text_srcs.array[i].source;
 			obs_source_addref(source);
 			break;
@@ -110,7 +115,7 @@ static obs_source_t *get_source(struct darray *array, const char *text)
 }
 
 static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
-			 const char *text, uint32_t *cx, uint32_t *cy,
+			 const char *file_path, const char *text, uint32_t *cx, uint32_t *cy,
 			 obs_data_t *settings, text_source_create text_creator)
 {
 	DARRAY(struct text_data) new_text_data;
@@ -120,21 +125,27 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 	new_text_data.da = *array;
 
 	pthread_mutex_lock(&text_ss->mutex);
-	new_source = get_source(&text_ss->text_srcs.da, text);
+	new_source = get_source(&text_ss->text_srcs.da, file_path, text);
 	pthread_mutex_unlock(&text_ss->mutex);
 
 	if (!new_source)
-		new_source = get_source(&new_text_data.da, text);
+		new_source = get_source(&new_text_data.da, file_path, text);
 	if (new_source)
 		obs_source_update(new_source, settings);
 	if (!new_source)
-		new_source = (*text_creator)(text, settings);
+		new_source = (*text_creator)(file_path, text, settings);
 
 	if (new_source) {
 		uint32_t new_cx = obs_source_get_width(new_source);
 		uint32_t new_cy = obs_source_get_height(new_source);
 
-		data.text = bstrdup(text);
+		if(!text) {
+			data.file_path = bstrdup(file_path);
+			data.text = NULL;
+		} else if(!file_path) {
+			data.file_path = NULL;
+			data.text = bstrdup(text);
+		}
 		data.source = new_source;
 		da_push_back(new_text_data, &data);
 
@@ -153,7 +164,14 @@ static void free_text_srcs(struct darray *array)
 	text_srcs.da = *array;
 
 	for (size_t i = 0; i < text_srcs.num; i++) {
-		bfree(text_srcs.array[i].text);
+		if(text_srcs.array[i].file_path) {
+			bfree(text_srcs.array[i].file_path);
+		}
+
+		if(text_srcs.array[i].text) {
+			bfree(text_srcs.array[i].text);
+		}
+
 		obs_source_release(text_srcs.array[i].source);
 	}
 
@@ -187,7 +205,11 @@ static void get_texts(void *data, calldata_t *cd)
 	text_srcs.da = text_ss->text_srcs.da;
 
 	for (size_t i = 0; i < text_srcs.num; i++) {
-		texts->push_back(text_srcs.array[i].text);
+		if(text_srcs.array[i].text) {
+			texts->push_back(text_srcs.array[i].text);
+		} else if(text_srcs.array[i].file_path) {
+			texts->push_back(text_srcs.array[i].file_path);
+		}
 	}
 
 	pthread_mutex_unlock(&text_ss->mutex);
@@ -328,6 +350,13 @@ static inline size_t random_text_src(struct text_slideshow *text_ss)
 	return (size_t)rand() % text_ss->text_srcs.num;
 }
 
+static bool valid_extension(const char *ext)
+{
+	if (!ext)
+		return false;
+	return astrcmpi(ext, ".txt") == 0;
+}
+
 void text_ss_update(void *data, obs_data_t *settings,
 		    text_source_create text_creator,
 		    set_text_alignment set_alignment)
@@ -337,13 +366,15 @@ void text_ss_update(void *data, obs_data_t *settings,
 	obs_source_t *new_tr = NULL;
 	obs_source_t *old_tr = NULL;
 	struct text_slideshow *text_ss = (text_slideshow *)data;
-	obs_data_array_t *array;
+	obs_data_array_t *text_array;
+	obs_data_array_t *file_array;
 	const char *tr_name;
 	uint32_t new_duration;
 	uint32_t new_speed;
 	uint32_t cx = 0;
 	uint32_t cy = 0;
-	size_t count;
+	size_t text_count;
+	size_t file_count;
 	const char *behavior;
 	const char *mode;
 
@@ -389,12 +420,30 @@ void text_ss_update(void *data, obs_data_t *settings,
 	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
 	new_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
 
-	array = obs_data_get_array(settings, S_TEXTS);
-	count = obs_data_array_count(array);
+	text_ss->read_from_single_file = obs_data_get_bool(settings, S_READ_SINGLE_FILE);
+	text_ss->read_from_multiple_files = obs_data_get_bool(settings, S_READ_MULTIPLE_FILES);
 
-	text_ss->read_from_file = obs_data_get_bool(settings, S_READ_FILE);
+	if(!text_ss->read_from_single_file && !text_ss->read_from_multiple_files) {
+		// image-slideshow recreates private sources every update
+		// can also simply update existing source settings if this method is too
+		// slow
 
-	if (text_ss->read_from_file) {
+		text_array = obs_data_get_array(settings, S_TEXTS);
+		text_count = obs_data_array_count(text_array);
+
+		for (size_t i = 0; i < text_count; i++) {
+			obs_data_t *item = obs_data_array_item(text_array, i);
+			const char *curr_text =
+				obs_data_get_string(item, "value");
+			add_text_src(text_ss, &new_text_srcs.da, NULL, curr_text, &cx,
+				     &cy, settings, text_creator);
+			obs_data_release(item);
+		}
+
+		obs_data_array_release(text_array);
+	}
+
+	if (text_ss->read_from_single_file) {
 		const char *file = obs_data_get_string(settings, S_TXT_FILE);
 		if (strcmp(file, "") != 0) {
 			text_ss->file = file;
@@ -405,26 +454,61 @@ void text_ss_update(void *data, obs_data_t *settings,
 
 			// add text source for every text read
 			for (unsigned int i = 0; i < texts.size(); i++) {
-				add_text_src(text_ss, &new_text_srcs.da,
+				add_text_src(text_ss, &new_text_srcs.da, NULL,
 					     texts[i], &cx, &cy, settings,
 					     text_creator);
 				bfree((void *)texts[i]);
 			}
 		}
 
-	} else {
+	}
 
-		// image-slideshow recreates private sources every update
-		// can also simply update existing source settings if this method is too
-		// slow
-		for (size_t i = 0; i < count; i++) {
-			obs_data_t *item = obs_data_array_item(array, i);
-			const char *curr_text =
-				obs_data_get_string(item, "value");
-			add_text_src(text_ss, &new_text_srcs.da, curr_text, &cx,
-				     &cy, settings, text_creator);
+	if(text_ss->read_from_multiple_files) {
+		file_array = obs_data_get_array(settings, S_FILES);
+		file_count = obs_data_array_count(file_array);
+
+		for (size_t i = 0; i < file_count; i++) {
+			obs_data_t *item = obs_data_array_item(file_array, i);
+			const char *path = obs_data_get_string(item, "value");
+			os_dir_t *dir = os_opendir(path);
+
+			if (dir) {
+				struct dstr dir_path = {0};
+				struct os_dirent *ent;
+
+				for (;;) {
+					const char *ext;
+
+					ent = os_readdir(dir);
+					if (!ent)
+						break;
+					if (ent->directory)
+						continue;
+
+					ext = os_get_path_extension(ent->d_name);
+					if (!valid_extension(ext))
+						continue;
+
+					dstr_copy(&dir_path, path);
+					dstr_cat_ch(&dir_path, '/');
+					dstr_cat(&dir_path, ent->d_name);
+					
+					add_text_src(text_ss, &new_text_srcs.da, dir_path.array,
+					     NULL, &cx, &cy, settings,
+					     text_creator);
+				}
+
+				dstr_free(&dir_path);
+				os_closedir(dir);
+			} else {
+				add_text_src(text_ss, &new_text_srcs.da, path,
+					     NULL, &cx, &cy, settings,
+					     text_creator);
+			}
+
 			obs_data_release(item);
 		}
+		obs_data_array_release(file_array);
 	}
 
 	/* ------------------------------------- */
@@ -538,8 +622,6 @@ void text_ss_update(void *data, obs_data_t *settings,
 
 		obs_source_media_started(text_ss->source);
 	}
-
-	obs_data_array_release(array);
 }
 
 void text_ss_activate(void *data)
@@ -751,10 +833,12 @@ static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
 			     obs_data_t *s)
 {
-	bool use_file = obs_data_get_bool(s, S_READ_FILE);
+	bool use_single_file = obs_data_get_bool(s, S_READ_SINGLE_FILE);
+	bool use_multiple_files = obs_data_get_bool(s, S_READ_MULTIPLE_FILES);
 
-	set_vis(use_file, S_TXT_FILE, true);
-	set_vis(use_file, S_TEXTS, false);
+	set_vis(S_TXT_FILE, use_single_file);
+	set_vis(S_FILES, use_multiple_files);
+	set_vis(S_TEXTS, !use_single_file && !use_multiple_files);
 	return true;
 }
 
@@ -775,7 +859,7 @@ void ss_properites(void *data, obs_properties_t *props)
 
 	/* ----------------- */
 
-	p = obs_properties_add_bool(props, S_READ_FILE, T_USE_FILE);
+	p = obs_properties_add_bool(props, S_READ_SINGLE_FILE, T_USE_SINGLE_FILE);
 	obs_property_set_modified_callback(p, use_file_changed);
 
 	string filter;
@@ -796,6 +880,13 @@ void ss_properites(void *data, obs_properties_t *props)
 
 	obs_properties_add_path(props, S_TXT_FILE, T_FILE, OBS_PATH_FILE,
 				filter.c_str(), path.c_str());
+	
+	p = obs_properties_add_bool(props, S_READ_MULTIPLE_FILES, T_USE_MULTIPLE_FILE);
+	obs_property_set_modified_callback(p, use_file_changed);
+
+	obs_properties_add_editable_list(props, S_FILES, T_FILES,
+					 OBS_EDITABLE_LIST_TYPE_FILES, NULL,
+					 NULL);
 
 	obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
 					 OBS_EDITABLE_LIST_TYPE_STRINGS, NULL,
