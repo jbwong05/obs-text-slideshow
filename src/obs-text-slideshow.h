@@ -86,10 +86,10 @@ using std::vector;
 #define T_TR_SWIPE T_TR_("Swipe")
 #define T_TR_SLIDE T_TR_("Slide")
 
-#define set_vis(val, show)                           \
-	do {                                              \
-		p = obs_properties_get(props, val);       \
-		obs_property_set_visible(p, show); \
+#define set_vis(val, show)                          \
+	do {                                        \
+		p = obs_properties_get(props, val); \
+		obs_property_set_visible(p, show);  \
 	} while (false)
 
 struct text_data {
