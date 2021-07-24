@@ -63,7 +63,7 @@ make
 ```
 
 ## Possible future work
-- [ ] Text input from files
+- [x] Text input from files (UTF-8)
 - [ ] Individual text settings for each text source
 - [x] GUI dock for easier transitioning between sources
   - [x] Find work around for the need for a `refresh sources` button; ~~because the obs-frontend-api doesn't have a source added or edited event~~ libobs handles the different signals for sources and not the frontend api
