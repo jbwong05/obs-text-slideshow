@@ -142,10 +142,10 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 		uint32_t new_cx = obs_source_get_width(new_source);
 		uint32_t new_cy = obs_source_get_height(new_source);
 
-		if (!text) {
+		if (file_path) {
 			data.file_path = bstrdup(file_path);
 			data.text = NULL;
-		} else if (!file_path) {
+		} else if (text) {
 			data.file_path = NULL;
 			data.text = bstrdup(text);
 		}
