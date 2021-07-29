@@ -5,6 +5,29 @@
 
 Inspired by the built in [image slideshow](https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/obs-slideshow.c), except for text sources instead. Both Free Type 2 and GDI+ are supported. Useful for displaying song lyrics, captions, etc.
 
+## Text file format
+### Single text file format
+New lines are expected in order to separate the text for the different text sources in the slideshow.
+```
+text for first
+text source
+
+text for second text source
+
+text for third text
+source
+
+single line is supported
+
+multiline is
+supported
+
+etc.
+```
+
+### Multiple text file format
+For the multiple text file option, the text from each text file corresponds to the text for one text source in the slideshow.
+
 ## Installation
 Installers can be found in the [Releases](https://github.com/jbwong05/obs-text-slideshow/releases) section.
 
