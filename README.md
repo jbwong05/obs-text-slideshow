@@ -5,8 +5,11 @@
 
 Inspired by the built in [image slideshow](https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/obs-slideshow.c), except for text sources instead. Both Free Type 2 and GDI+ are supported. Useful for displaying song lyrics, captions, etc.
 
-## Text file format
-### Single text file format
+## Usage
+This plugin functions exactly as the built in [image slideshow](https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/obs-slideshow.c) plugin, except instead of transitioning between image sources it transitions between text sources instead. Simply click the add source button and add the Text Slide Show source. Text sources can be added manually using the default `Slide Texts` box or read from file by selecting the read from file option and specifying the file path(s). The expected format of the text file(s) is described [below](https://github.com/jbwong05/obs-text-slideshow#text-file-format). Transitioning between text sources manually can be done using OBS's media controls or using the built in [dock](https://github.com/jbwong05/obs-text-slideshow#dock).
+
+### Text file format
+#### Single text file format
 New lines are expected in order to separate the text for the different text sources in the slideshow.
 ```
 text for first
@@ -25,8 +28,11 @@ supported
 etc.
 ```
 
-### Multiple text file format
+#### Multiple text file format
 For the multiple text file option, the text from each text file corresponds to the text for one text source in the slideshow.
+
+### Dock
+To open the dock, Select View -> Docks -> OBS Text Slide Show. The dock will display the first Text Slide Show source for the current scene as well as all of its text sources below. Clicking on the text sources on the dock will cause the source to transition to this text source. The drop down at the top of the dock can be used to have the dock display another Text Slide Show on the current scene other than the first. Only Text Slide Show sources on the current scene can be viewed on the dock. When the current scene is changed, the dock and will update accordingly to include only the Text Slide Show sources on the new scene.
 
 ## Installation
 Installers can be found in the [Releases](https://github.com/jbwong05/obs-text-slideshow/releases) section.
