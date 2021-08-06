@@ -37,7 +37,7 @@ To open the dock, Select View -> Docks -> OBS Text Slide Show. The dock will dis
 ## Installation
 Installers can be found in the [Releases](https://github.com/jbwong05/obs-text-slideshow/releases) section.
 
-Note: The macOS installer is currently unsigned because I don't have a subscription for the Apple Developer program.
+Note: The Windows and macOS installers are currently unsigned because I don't have money to purchase a certificate to sign the Windows installer or to purchase a subscription for the Apple Developer program in order to sign and notarize the macOS pkg installer. Unfortunately as a result these installers may be flagged by certain antivirus programs and may have to be temporarily disabled in order for the installer to be allowed to run.
 
 ## Building from Source
 
