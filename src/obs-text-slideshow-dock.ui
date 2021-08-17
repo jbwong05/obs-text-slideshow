@@ -51,16 +51,12 @@
        <attribute name="title">
         <string>Preview</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="previewLayout">
         <item>
-         <layout class="QVBoxLayout" name="previewLayout">
-          <item>
-           <widget class="QComboBox" name="previewSourceBox"/>
-          </item>
-          <item>
-           <widget class="QListWidget" name="previewTextList"/>
-          </item>
-         </layout>
+         <widget class="QComboBox" name="previewSourceBox"/>
+        </item>
+        <item>
+         <widget class="QListWidget" name="previewTextList"/>
         </item>
        </layout>
       </widget>
@@ -68,16 +64,12 @@
        <attribute name="title">
         <string>Program</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+       <layout class="QVBoxLayout" name="programLayout">
         <item>
-         <layout class="QVBoxLayout" name="programLayout">
-          <item>
-           <widget class="QComboBox" name="programSourceBox"/>
-          </item>
-          <item>
-           <widget class="QListWidget" name="programTextList"/>
-          </item>
-         </layout>
+         <widget class="QComboBox" name="programSourceBox"/>
+        </item>
+        <item>
+         <widget class="QListWidget" name="programTextList"/>
         </item>
        </layout>
       </widget>
