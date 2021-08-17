@@ -39,20 +39,35 @@ private:
 	static void OBSFrontendEventWrapper(enum obs_frontend_event event,
 					    void *ptr);
 	void OBSFrontendEvent(enum obs_frontend_event event);
-	void changeActiveSource(int index);
-	void setActiveSource(int index);
-	void chooseNewActiveSource();
-	void updateSources();
-	void updateTexts();
-	void transition(QListWidgetItem *item);
+	void changeActivePreviewSource(int index);
+	void changeActiveProgramSource(int index);
+	void setActiveSource(int index, QComboBox *sourceBox,
+			     vector<obs_source_t *> &text_slideshows,
+			     struct slideshow_t *active_slideshow);
+	void chooseNewActiveSource(QComboBox *sourceBox,
+				   vector<obs_source_t *> &text_slideshows,
+				   struct slideshow_t *active_slideshow);
+	void updateSources(obs_source_t *scene_source, QComboBox *sourceBox,
+			   vector<obs_source_t *> &text_slideshows,
+			   struct slideshow_t *active_slideshow);
+	void updateTexts(QListWidget *textList, vector<const char *> &texts,
+			 struct slideshow_t *active_slideshow);
+	void previewTransition(QListWidgetItem *item);
+	void programTransition(QListWidgetItem *item);
 
 	std::unique_ptr<Ui::TextSlideshowDock> ui;
-	vector<obs_source_t *> text_slideshows;
-	vector<const char *> texts;
-	struct slideshow_t active_slideshow;
+
+	vector<obs_source_t *> preview_text_slideshows;
+	vector<const char *> preview_texts;
+	struct slideshow_t preview_active_slideshow;
+
+	vector<obs_source_t *> program_text_slideshows;
+	vector<const char *> program_texts;
+	struct slideshow_t program_active_slideshow;
 
 public:
 	TextSlideshowDock(QWidget *parent = nullptr);
 	~TextSlideshowDock();
-	void refresh();
+	void refreshPreview();
+	void refreshProgram();
 };
