@@ -55,14 +55,12 @@ void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event)
 {
 	switch (event) {
 	case OBS_FRONTEND_EVENT_FINISHED_LOADING:
-		refreshPreview();
+	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
+	case OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED:
+	case OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED:
 		refreshProgram();
-		break;
 	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
 		refreshPreview();
-		break;
-	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
-		refreshProgram();
 		break;
 	default:
 		break;
@@ -140,6 +138,10 @@ void TextSlideshowDock::updateSources(obs_source_t *scene_source,
 				      struct slideshow_t *active_slideshow)
 {
 	obs_scene_t *scene = NULL;
+
+	if (!scene_source) {
+		scene_source = obs_frontend_get_current_scene();
+	}
 
 	sourceBox->clear();
 	text_slideshows.clear();
