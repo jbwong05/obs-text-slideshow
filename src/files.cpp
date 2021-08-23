@@ -45,12 +45,18 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 	char chunk[CHUNK_LEN];
 	memset(chunk, 0, CHUNK_LEN);
 	bool add_new_line = true;
-	int read = 0;
+	size_t read = 0;
 
-	while (read = fread(chunk, sizeof(char), CHUNK_LEN, file)) {
+	while ((read = fread(chunk, sizeof(char), CHUNK_LEN, file))) {
 
 		bool end_in_delim = chunk[read - 1] == *delim;
+
+#ifdef _WIN32
+		char *next_token = NULL;
+		char *token = strtok_s(chunk, delim, &next_token);
+#else
 		char *token = strtok(chunk, delim);
+#endif
 
 		while (token) {
 
@@ -98,7 +104,11 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 				texts[curr_index] = new_ptr;
 			}
 
+#ifdef _WIN32
+			token = strtok_s(NULL, delim, &next_token);
+#else
 			token = strtok(NULL, delim);
+#endif
 		}
 
 		add_new_line = end_in_delim;
