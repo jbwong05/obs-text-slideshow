@@ -455,6 +455,11 @@ void text_ss_update(void *data, obs_data_t *settings,
 		if (strcmp(file, "") != 0) {
 			text_ss->file = file;
 
+			text_ss->custom_delim =
+				obs_data_get_bool(settings, S_CUSTOM_DELIM)
+					? obs_data_get_string(settings, S_DELIM)
+					: NULL;
+
 			// read file
 			vector<char *> texts;
 			read_file(text_ss, settings, texts);
@@ -844,9 +849,19 @@ static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
 	bool use_single_file = obs_data_get_bool(s, S_READ_SINGLE_FILE);
 	bool use_multiple_files = obs_data_get_bool(s, S_READ_MULTIPLE_FILES);
 
+	set_vis(S_CUSTOM_DELIM, use_single_file);
 	set_vis(S_TXT_FILE, use_single_file);
 	set_vis(S_FILES, use_multiple_files);
 	set_vis(S_TEXTS, !use_single_file && !use_multiple_files);
+	return true;
+}
+
+static bool use_custom_delim_changed(obs_properties_t *props, obs_property_t *p,
+				     obs_data_t *s)
+{
+	bool use_custom_delim = obs_data_get_bool(s, S_CUSTOM_DELIM);
+	set_vis(S_DELIM, use_custom_delim);
+
 	return true;
 }
 
@@ -886,6 +901,12 @@ void ss_properites(void *data, obs_properties_t *props)
 		if (slash)
 			path.resize(slash - path.c_str() + 1);
 	}
+
+	p = obs_properties_add_bool(props, S_CUSTOM_DELIM, T_USE_CUSTOM_DELIM);
+	obs_property_set_modified_callback(p, use_custom_delim_changed);
+
+	obs_properties_add_text(props, S_DELIM, T_CUSTOM_DELIM,
+				OBS_TEXT_DEFAULT);
 
 	obs_properties_add_path(props, S_TXT_FILE, T_FILE, OBS_PATH_FILE,
 				filter.c_str(), path.c_str());

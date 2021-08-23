@@ -46,6 +46,8 @@ using std::vector;
 #define S_MODE_MANUAL "mode_manual"
 
 #define S_READ_SINGLE_FILE "read_single_file"
+#define S_CUSTOM_DELIM "custom_delim"
+#define S_DELIM "delim"
 #define S_TXT_FILE "txt_file"
 #define S_READ_MULTIPLE_FILES "read_multiple_files"
 #define S_FILES "files"
@@ -74,6 +76,8 @@ using std::vector;
 #define T_MODE_MANUAL T_SS_("SlideMode.Manual")
 
 #define T_USE_SINGLE_FILE T_SS_("ReadFromSingleFile")
+#define T_USE_CUSTOM_DELIM T_SS_("UseCustomDelim")
+#define T_CUSTOM_DELIM T_SS_("CustomDelim")
 #define T_FILE T_SS_("TextFile")
 #define T_FILTER_TEXT_FILES T_SS_("Filter.TextFiles")
 #define T_FILTER_ALL_FILES T_SS_("Filter.AllFiles")
@@ -135,8 +139,9 @@ struct text_slideshow {
 	DARRAY(struct text_data) text_srcs;
 
 	bool read_from_single_file = false;
-	string file;
 	bool read_from_multiple_files = false;
+	string file;
+	const char *custom_delim = NULL;
 
 	enum behavior behavior;
 

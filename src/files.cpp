@@ -21,6 +21,94 @@ static void remove_new_lines(vector<char *> &texts)
 	}
 }
 
+static void load_text_from_file(vector<char *> &texts, const char *file_path,
+				const char *delim)
+{
+	FILE *file = os_fopen(file_path, "rb"); /* should check the result */
+	if (file == NULL) {
+		blog(LOG_WARNING, "Failed to open file %s", file_path);
+		return;
+	}
+
+	uint16_t header = 0;
+	size_t num_read = fread(&header, 2, 1, file);
+	if (num_read == 1 && (header == 0xFEFF || header == 0xFFFE)) {
+		blog(LOG_WARNING, "UTF-16 not supported for file %s",
+		     file_path);
+		fclose(file);
+		return;
+	}
+
+	fseek(file, 0, SEEK_SET);
+
+	unsigned int curr_index = 0;
+	char chunk[CHUNK_LEN];
+	memset(chunk, 0, CHUNK_LEN);
+	bool add_new_line = true;
+	int read = 0;
+
+	while (read = fread(chunk, sizeof(char), CHUNK_LEN, file)) {
+
+		bool end_in_delim = chunk[read - 1] == *delim;
+		char *token = strtok(chunk, delim);
+
+		while (token) {
+
+			size_t token_len = strlen(token);
+
+			if (add_new_line) {
+				// Need to add new string
+				char *curr_text =
+					(char *)bzalloc(token_len + 1);
+
+				if (curr_text == NULL) {
+					fclose(file);
+					return;
+				}
+#ifdef _WIN32
+				strncpy_s(curr_text, token_len + 1, token,
+					  token_len);
+#else
+				strncpy(curr_text, token, token_len);
+#endif
+
+				texts.push_back(curr_text);
+
+			} else {
+				// Need to append to existing string
+				size_t existing_len = strlen(texts[curr_index]);
+				char *new_ptr = (char *)brealloc(
+					(void *)texts[curr_index],
+					existing_len + token_len + 1);
+
+				if (new_ptr == NULL) {
+					fclose(file);
+					return;
+				}
+
+#ifdef _WIN32
+				strncpy_s(new_ptr + existing_len, token_len + 1,
+					  token, token_len);
+#else
+				strncpy(new_ptr + existing_len, token,
+					token_len);
+#endif
+
+				new_ptr[existing_len + token_len] = 0;
+				texts[curr_index] = new_ptr;
+			}
+
+			token = strtok(NULL, delim);
+		}
+
+		add_new_line = end_in_delim;
+	}
+
+	remove_new_lines(texts);
+
+	fclose(file);
+}
+
 static void load_text_from_file(vector<char *> &texts, const char *file_path)
 {
 	FILE *file = os_fopen(file_path, "rb"); /* should check the result */
@@ -116,8 +204,12 @@ void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
 	} else {
 		if (!text_ss->file.empty()) {
 
-			text_ss->file = file_path;
-			load_text_from_file(texts, file_path);
+			if (text_ss->custom_delim) {
+				load_text_from_file(texts, file_path,
+						    text_ss->custom_delim);
+			} else {
+				load_text_from_file(texts, file_path);
+			}
 		}
 	}
 }
