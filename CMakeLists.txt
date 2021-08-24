@@ -33,6 +33,10 @@ endif()
 find_package(LibObs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
 
+if(NOT DEFINED ${CMAKE_BUILD_TYPE})
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 configure_file(
     src/plugin-macros.h.in
     ../src/plugin-macros.generated.h
@@ -194,6 +198,12 @@ endif()
 # --- End of section ---
 
 # --- Linux-specific build settings and tasks ---
+if(UNIX OR APPLE)
+    if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+    endif()
+endif()
+
 if(UNIX AND NOT APPLE)
     include(GNUInstallDirs)
 
