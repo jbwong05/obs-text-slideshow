@@ -4,10 +4,10 @@
 
 #define CHUNK_LEN 256
 
-static void remove_new_lines(vector<char *> &texts)
+static void remove_new_lines(unsigned int start, vector<char *> &texts)
 {
 	// Remove trailing new lines
-	for (unsigned int i = 0; i < texts.size(); i++) {
+	for (unsigned int i = start; i < texts.size(); i++) {
 		char *curr_text = texts[i];
 		size_t curr_len = strlen(curr_text);
 
@@ -114,7 +114,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 		add_new_line = end_in_delim;
 	}
 
-	remove_new_lines(texts);
+	remove_new_lines(texts.size() - 1, texts);
 
 	fclose(file);
 }
@@ -195,7 +195,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 		}
 	}
 
-	remove_new_lines(texts);
+	remove_new_lines(0, texts);
 
 	fclose(file);
 }
