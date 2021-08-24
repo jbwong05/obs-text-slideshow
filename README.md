@@ -1,5 +1,7 @@
 # obs-text-slideshow
 
+[![latest-tag](https://badgen.net/github/release/jbwong05/obs-text-slideshow)](https://github.com/jbwong05/obs-text-slideshow)
+[![Downloads](https://img.shields.io/github/downloads/jbwong05/obs-text-slideshow/total?cacheSeconds=3600)](https://github.com/jbwong05/obs-text-slideshow/releases)
 ![CI Multiplatform Build](https://github.com/jbwong05/obs-text-slideshow/actions/workflows/main.yml/badge.svg)
 ![Clang Format](https://github.com/jbwong05/obs-text-slideshow/actions/workflows/clang-format.yml/badge.svg)
 
