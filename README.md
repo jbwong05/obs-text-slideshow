@@ -12,7 +12,7 @@ This plugin functions exactly as the built in [image slideshow](https://github.c
 
 ### Text file format
 #### Single text file format
-New lines are expected in order to separate the text for the different text sources in the slideshow.
+By default, if no custom delimiter is specified, the new line character is chosen as the delimiter as follows:
 ```
 text for first
 text source
@@ -29,6 +29,7 @@ supported
 
 etc.
 ```
+Custom delimiters can also be specified so other characters can be used as delimiters instead of the new line character.
 
 #### Multiple text file format
 For the multiple text file option, the text from each text file corresponds to the text for one text source in the slideshow.
