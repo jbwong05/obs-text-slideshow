@@ -76,7 +76,9 @@ set(PLUGIN_HEADERS
 	src/plugin-macros.generated.h
     src/obs-text-slideshow.h
     src/obs-text-slideshow-dock.h
-    src/files.h)
+    src/files.h
+    src/obs-text-freetype2-props.h
+    src/obs-text-gdiplus-props.h)
 
 qt5_wrap_ui(PLUGIN_UI_HEADERS src/obs-text-slideshow-dock.ui)
 

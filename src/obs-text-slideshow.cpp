@@ -865,6 +865,33 @@ static bool use_custom_delim_changed(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
+static bool text_added(obs_properties_t *props, obs_property_t *p,
+		       obs_data_t *s)
+{
+	obs_property_t *list = obs_properties_get(props, S_SOURCE_COMBO_BOX);
+	obs_property_list_clear(list);
+
+	obs_data_array_t *text_array = obs_data_get_array(s, S_TEXTS);
+	size_t text_count = obs_data_array_count(text_array);
+
+	for (size_t i = 0; i < text_count; i++) {
+		obs_data_t *item = obs_data_array_item(text_array, i);
+		const char *curr_text = obs_data_get_string(item, "value");
+		obs_property_list_add_string(list, curr_text, curr_text);
+		obs_data_release(item);
+	}
+
+	obs_data_array_release(text_array);
+	return true;
+}
+
+static bool text_source_switched(obs_properties_t *props, obs_property_t *p,
+		       obs_data_t *s)
+{
+	
+	return true;
+}
+
 void ss_properites(void *data, obs_properties_t *props)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
@@ -919,9 +946,10 @@ void ss_properites(void *data, obs_properties_t *props)
 					 OBS_EDITABLE_LIST_TYPE_FILES, NULL,
 					 NULL);
 
-	obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
-					 OBS_EDITABLE_LIST_TYPE_STRINGS, NULL,
-					 NULL);
+	p = obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
+					     OBS_EDITABLE_LIST_TYPE_STRINGS,
+					     NULL, NULL);
+	obs_property_set_modified_callback(p, text_added);
 
 	p = obs_properties_add_list(props, S_BEHAVIOR, T_BEHAVIOR,
 				    OBS_COMBO_TYPE_LIST,
@@ -965,6 +993,11 @@ void ss_properites(void *data, obs_properties_t *props)
 	char str[32];
 	snprintf(str, 32, "%dx%d", cx, cy);
 	obs_property_list_add_string(p, str, str);
+
+	p = obs_properties_add_list(props, S_SOURCE_COMBO_BOX,
+				    T_SOURCE_COMBO_BOX, OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	obs_property_set_modified_callback(p, text_source_switched);
 }
 
 void text_ss_play_pause(void *data, bool pause)

@@ -25,6 +25,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <util/dstr.h>
 #include <string>
 #include <vector>
+#include "obs-text-freetype2-props.h"
+#include "obs-text-gdiplus-props.h"
 
 using std::string;
 using std::vector;
@@ -51,6 +53,8 @@ using std::vector;
 #define S_TXT_FILE "txt_file"
 #define S_READ_MULTIPLE_FILES "read_multiple_files"
 #define S_FILES "files"
+
+#define S_SOURCE_COMBO_BOX "source_combo_box"
 
 #define TR_CUT "cut"
 #define TR_FADE "fade"
@@ -84,6 +88,8 @@ using std::vector;
 #define T_USE_MULTIPLE_FILE T_SS_("ReadFromMultipleFiles")
 #define T_FILES T_SS_("Files")
 
+#define T_SOURCE_COMBO_BOX T_SS_("SourceComboBox")
+
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 #define T_TR_CUT T_TR_("Cut")
 #define T_TR_FADE T_TR_("Fade")
@@ -100,6 +106,11 @@ struct text_data {
 	char *file_path;
 	char *text;
 	obs_source_t *source;
+
+	union text_source_props {
+		struct freetype2_props freetype2_props;
+		struct gdiplus_props gdiplus_props;
+	} text_source_props;
 };
 
 enum behavior {
