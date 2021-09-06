@@ -96,10 +96,10 @@ using std::vector;
 #define T_TR_SWIPE T_TR_("Swipe")
 #define T_TR_SLIDE T_TR_("Slide")
 
-#define set_vis(val, show)                          \
-	do {                                        \
-		p = obs_properties_get(props, val); \
-		obs_property_set_visible(p, show);  \
+#define set_vis(val, show)                                          \
+	do {                                                        \
+		obs_property_t *p = obs_properties_get(props, val); \
+		obs_property_set_visible(p, show);                  \
 	} while (false)
 
 struct text_data {
@@ -198,7 +198,8 @@ void text_ss_enum_all_sources(void *data, obs_source_enum_proc_t callback,
 uint32_t text_ss_width(void *data);
 uint32_t text_ss_height(void *data);
 void ss_defaults(obs_data_t *settings);
-void ss_properites(void *data, obs_properties_t *props);
+void ss_properites(void *data, obs_properties_t *props,
+		   switch_text_settings_cb switch_text_settings_cb);
 void text_ss_play_pause(void *data, bool pause);
 void text_ss_restart(void *data);
 void text_ss_stop(void *data);

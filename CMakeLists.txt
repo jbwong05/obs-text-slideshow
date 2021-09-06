@@ -78,7 +78,8 @@ set(PLUGIN_HEADERS
     src/obs-text-slideshow-dock.h
     src/files.h
     src/obs-text-freetype2-props.h
-    src/obs-text-gdiplus-props.h)
+    src/obs-text-gdiplus-props.h
+    src/obs-text-props.h)
 
 qt5_wrap_ui(PLUGIN_UI_HEADERS src/obs-text-slideshow-dock.ui)
 

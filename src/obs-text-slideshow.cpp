@@ -131,8 +131,8 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 	new_source = get_source(&text_ss->text_srcs.da, file_path, text);
 	pthread_mutex_unlock(&text_ss->mutex);
 
-	if (!new_source)
-		new_source = get_source(&new_text_data.da, file_path, text);
+	/*if (!new_source)
+		new_source = get_source(&new_text_data.da, file_path, text);*/
 	if (new_source)
 		obs_source_update(new_source, settings);
 	if (!new_source)
@@ -150,6 +150,9 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 			data.text = bstrdup(text);
 		}
 		data.source = new_source;
+
+		// Need to allocate memory for the settings union
+
 		da_push_back(new_text_data, &data);
 
 		if (new_cx > *cx)
@@ -843,11 +846,12 @@ static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
 #define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
 
-static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
-			     obs_data_t *s)
+static bool use_file_changed(obs_properties_t *props, obs_property_t *property,
+			     obs_data_t *settings)
 {
-	bool use_single_file = obs_data_get_bool(s, S_READ_SINGLE_FILE);
-	bool use_multiple_files = obs_data_get_bool(s, S_READ_MULTIPLE_FILES);
+	bool use_single_file = obs_data_get_bool(settings, S_READ_SINGLE_FILE);
+	bool use_multiple_files =
+		obs_data_get_bool(settings, S_READ_MULTIPLE_FILES);
 
 	set_vis(S_CUSTOM_DELIM, use_single_file);
 	set_vis(S_TXT_FILE, use_single_file);
@@ -856,22 +860,23 @@ static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static bool use_custom_delim_changed(obs_properties_t *props, obs_property_t *p,
-				     obs_data_t *s)
+static bool use_custom_delim_changed(obs_properties_t *props,
+				     obs_property_t *property,
+				     obs_data_t *settings)
 {
-	bool use_custom_delim = obs_data_get_bool(s, S_CUSTOM_DELIM);
+	bool use_custom_delim = obs_data_get_bool(settings, S_CUSTOM_DELIM);
 	set_vis(S_DELIM, use_custom_delim);
 
 	return true;
 }
 
-static bool text_added(obs_properties_t *props, obs_property_t *p,
-		       obs_data_t *s)
+static bool text_modified(obs_properties_t *props, obs_property_t *property,
+			  obs_data_t *settings)
 {
 	obs_property_t *list = obs_properties_get(props, S_SOURCE_COMBO_BOX);
 	obs_property_list_clear(list);
 
-	obs_data_array_t *text_array = obs_data_get_array(s, S_TEXTS);
+	obs_data_array_t *text_array = obs_data_get_array(settings, S_TEXTS);
 	size_t text_count = obs_data_array_count(text_array);
 
 	for (size_t i = 0; i < text_count; i++) {
@@ -885,14 +890,20 @@ static bool text_added(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static bool text_source_switched(obs_properties_t *props, obs_property_t *p,
-		       obs_data_t *s)
+static bool text_source_switched(void *priv, obs_properties_t *props,
+				 obs_property_t *property, obs_data_t *settings)
 {
+	struct text_slideshow *text_ss = (text_slideshow *)priv;
+	switch_text_settings_cb callback =
+		(switch_text_settings_cb)obs_properties_get_param(props);
 	
+	(*callback)(text_ss, settings);
+
 	return true;
 }
 
-void ss_properites(void *data, obs_properties_t *props)
+void ss_properites(void *data, obs_properties_t *props,
+		   switch_text_settings_cb switch_text_settings_cb)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 	struct obs_video_info ovi;
@@ -900,6 +911,8 @@ void ss_properites(void *data, obs_properties_t *props)
 	int cx;
 	int cy;
 	string path;
+
+	obs_properties_set_param(props, (void *)switch_text_settings_cb, 0);
 
 	/* ----------------- */
 
@@ -949,7 +962,7 @@ void ss_properites(void *data, obs_properties_t *props)
 	p = obs_properties_add_editable_list(props, S_TEXTS, T_TEXTS,
 					     OBS_EDITABLE_LIST_TYPE_STRINGS,
 					     NULL, NULL);
-	obs_property_set_modified_callback(p, text_added);
+	obs_property_set_modified_callback(p, text_modified);
 
 	p = obs_properties_add_list(props, S_BEHAVIOR, T_BEHAVIOR,
 				    OBS_COMBO_TYPE_LIST,
@@ -997,7 +1010,7 @@ void ss_properites(void *data, obs_properties_t *props)
 	p = obs_properties_add_list(props, S_SOURCE_COMBO_BOX,
 				    T_SOURCE_COMBO_BOX, OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	obs_property_set_modified_callback(p, text_source_switched);
+	obs_property_set_modified_callback2(p, text_source_switched, text_ss);
 }
 
 void text_ss_play_pause(void *data, bool pause)
