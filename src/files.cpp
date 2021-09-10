@@ -4,10 +4,10 @@
 
 #define CHUNK_LEN 256
 
-static void remove_new_lines(unsigned int start, vector<char *> &texts)
+static void remove_new_lines(size_t start, vector<char *> &texts)
 {
 	// Remove trailing new lines
-	for (unsigned int i = start; i < texts.size(); i++) {
+	for (size_t i = start; i < texts.size(); i++) {
 		char *curr_text = texts[i];
 		size_t curr_len = strlen(curr_text);
 
