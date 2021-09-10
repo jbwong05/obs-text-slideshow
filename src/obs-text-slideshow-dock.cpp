@@ -40,11 +40,23 @@ static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
 		    || strcmp(id, "text-gdiplus-slideshow") == 0
 #endif
 		) {
-			vector<obs_source_t *> *program_text_slideshows =
+			vector<obs_source_t *> *text_slideshows =
 				reinterpret_cast<vector<obs_source_t *> *>(
 					param);
-			program_text_slideshows->insert(
-				program_text_slideshows->begin(), source);
+			text_slideshows->insert(text_slideshows->begin(),
+						source);
+		} else if (strcmp(id, "scene") == 0) {
+			obs_scene_t *nested_scene =
+				obs_scene_from_source(source);
+			if (nested_scene) {
+				vector<obs_source_t *> *text_slideshows =
+					reinterpret_cast<
+						vector<obs_source_t *> *>(
+						param);
+				obs_scene_enum_items(nested_scene,
+						     findTextSlideshowSources,
+						     text_slideshows);
+			}
 		}
 	}
 
