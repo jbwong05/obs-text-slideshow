@@ -17,6 +17,14 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 #include "obs-text-slideshow-dock.h"
+#include <unordered_set>
+
+using std::unordered_set;
+
+struct found_text_slideshows {
+	vector<obs_source_t *> *ordered_slideshows;
+	unordered_set<obs_source_t *> found_slideshows;
+};
 
 void TextSlideshowDock::OBSFrontendEventWrapper(enum obs_frontend_event event,
 						void *ptr)
@@ -40,22 +48,31 @@ static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
 		    || strcmp(id, "text-gdiplus-slideshow") == 0
 #endif
 		) {
-			vector<obs_source_t *> *text_slideshows =
-				reinterpret_cast<vector<obs_source_t *> *>(
+			struct found_text_slideshows *found_text_slideshows =
+				reinterpret_cast<struct found_text_slideshows *>(
 					param);
-			text_slideshows->insert(text_slideshows->begin(),
-						source);
+			if (found_text_slideshows->found_slideshows.find(
+				    source) ==
+			    found_text_slideshows->found_slideshows.end()) {
+				found_text_slideshows->ordered_slideshows
+					->insert(found_text_slideshows
+							 ->ordered_slideshows
+							 ->begin(),
+						 source);
+				found_text_slideshows->found_slideshows.insert(
+					source);
+			}
 		} else if (strcmp(id, "scene") == 0) {
 			obs_scene_t *nested_scene =
 				obs_scene_from_source(source);
 			if (nested_scene) {
-				vector<obs_source_t *> *text_slideshows =
-					reinterpret_cast<
-						vector<obs_source_t *> *>(
+				struct found_text_slideshows *
+					found_text_slideshows = reinterpret_cast<
+						struct found_text_slideshows *>(
 						param);
 				obs_scene_enum_items(nested_scene,
 						     findTextSlideshowSources,
-						     text_slideshows);
+						     found_text_slideshows);
 			}
 		}
 	}
@@ -158,8 +175,12 @@ void TextSlideshowDock::updateSources(obs_source_t *scene_source,
 	sourceBox->clear();
 	text_slideshows.clear();
 
+	struct found_text_slideshows found_text_slideshows;
+	found_text_slideshows.ordered_slideshows = &text_slideshows;
+
 	scene = obs_scene_from_source(scene_source);
-	obs_scene_enum_items(scene, findTextSlideshowSources, &text_slideshows);
+	obs_scene_enum_items(scene, findTextSlideshowSources,
+			     &found_text_slideshows);
 
 	active_slideshow->index = -1;
 
