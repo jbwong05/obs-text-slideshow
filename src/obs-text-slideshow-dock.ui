@@ -45,7 +45,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="previewTab">
        <attribute name="title">
@@ -70,6 +70,19 @@
         </item>
         <item>
          <widget class="QListWidget" name="programTextList"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="allTab">
+       <attribute name="title">
+        <string>All</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="allLayout">
+        <item>
+         <widget class="QComboBox" name="allSourceBox"/>
+        </item>
+        <item>
+         <widget class="QListWidget" name="allTextList"/>
         </item>
        </layout>
       </widget>

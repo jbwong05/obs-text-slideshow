@@ -26,6 +26,11 @@ struct found_text_slideshows {
 	unordered_set<obs_source_t *> found_slideshows;
 };
 
+static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
+				     void *param);
+static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
+				     void *param);
+
 void TextSlideshowDock::OBSFrontendEventWrapper(enum obs_frontend_event event,
 						void *ptr)
 {
@@ -33,13 +38,8 @@ void TextSlideshowDock::OBSFrontendEventWrapper(enum obs_frontend_event event,
 	dock->OBSFrontendEvent(event);
 }
 
-static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
-				     void *param)
+static bool checkIfSlideshow(void *param, obs_source_t *source)
 {
-
-	obs_source_t *source = NULL;
-	source = obs_sceneitem_get_source(item);
-
 	if (source) {
 		const char *id = obs_source_get_id(source);
 
@@ -80,6 +80,17 @@ static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
+static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
+				     void *param)
+{
+
+	obs_source_t *source = NULL;
+	source = obs_sceneitem_get_source(item);
+	checkIfSlideshow(param, source);
+
+	return true;
+}
+
 void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event)
 {
 	switch (event) {
@@ -90,6 +101,7 @@ void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event)
 		refreshProgram();
 	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
 		refreshPreview();
+		refreshAll();
 		break;
 	default:
 		break;
@@ -115,6 +127,15 @@ void TextSlideshowDock::changeActiveProgramSource(int index)
 				&program_active_slideshow);
 		updateTexts(ui->programTextList, program_texts,
 			    &program_active_slideshow);
+	}
+}
+
+void TextSlideshowDock::changeActiveAllSource(int index)
+{
+	if (index >= 0) {
+		setActiveSource(index, ui->allSourceBox, all_text_slideshows,
+				&all_active_slideshow);
+		updateTexts(ui->allTextList, all_texts, &all_active_slideshow);
 	}
 }
 
@@ -253,6 +274,38 @@ void TextSlideshowDock::refreshProgram()
 	}
 }
 
+void TextSlideshowDock::refreshAll()
+{
+	ui->allSourceBox->clear();
+	all_text_slideshows.clear();
+
+	struct found_text_slideshows found_text_slideshows;
+	found_text_slideshows.ordered_slideshows = &all_text_slideshows;
+
+	obs_enum_sources(checkIfSlideshow, &found_text_slideshows);
+
+	all_active_slideshow.index = -1;
+
+	for (unsigned int i = 0; i < all_text_slideshows.size(); i++) {
+		const char *name = obs_source_get_name(all_text_slideshows[i]);
+		ui->allSourceBox->addItem(name);
+
+		if (all_active_slideshow.source == all_text_slideshows[i]) {
+			all_active_slideshow.index = i;
+		}
+	}
+
+	if (all_text_slideshows.size() == 0) {
+		ui->allSourceBox->addItem(
+			"No Text Slide Show sources found on current scene");
+		ui->allTextList->clear();
+	} else {
+		chooseNewActiveSource(ui->allSourceBox, all_text_slideshows,
+				      &all_active_slideshow);
+		updateTexts(ui->allTextList, all_texts, &all_active_slideshow);
+	}
+}
+
 void TextSlideshowDock::previewTransition(QListWidgetItem *item)
 {
 	int index = ui->previewTextList->row(item);
@@ -281,11 +334,26 @@ void TextSlideshowDock::programTransition(QListWidgetItem *item)
 	}
 }
 
+void TextSlideshowDock::allTransition(QListWidgetItem *item)
+{
+	int index = ui->allTextList->row(item);
+
+	if (index >= 0) {
+		proc_handler_t *handler = obs_source_get_proc_handler(
+			all_active_slideshow.source);
+		calldata_t cd = {0};
+		calldata_set_int(&cd, "index", index);
+		proc_handler_call(handler, "dock_transition", &cd);
+		calldata_free(&cd);
+	}
+}
+
 static void callback(void *data, calldata_t *cd)
 {
 	TextSlideshowDock *dock = reinterpret_cast<TextSlideshowDock *>(data);
 	dock->refreshPreview();
 	dock->refreshProgram();
+	dock->refreshAll();
 }
 
 TextSlideshowDock::TextSlideshowDock(QWidget *parent)
@@ -296,6 +364,8 @@ TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 	preview_active_slideshow.index = -1;
 	program_active_slideshow.source = NULL;
 	program_active_slideshow.index = -1;
+	all_active_slideshow.source = NULL;
+	all_active_slideshow.index = -1;
 
 	const char *source_signals[] = {"source_create", "source_destroy",
 					"source_rename", "source_save"};
@@ -310,10 +380,14 @@ TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 		this, &TextSlideshowDock::changeActivePreviewSource);
 	connect(ui->programSourceBox, QOverload<int>::of(&QComboBox::activated),
 		this, &TextSlideshowDock::changeActiveProgramSource);
+	connect(ui->allSourceBox, QOverload<int>::of(&QComboBox::activated),
+		this, &TextSlideshowDock::changeActiveAllSource);
 	connect(ui->previewTextList, &QListWidget::itemClicked, this,
 		&TextSlideshowDock::previewTransition);
 	connect(ui->programTextList, &QListWidget::itemClicked, this,
 		&TextSlideshowDock::programTransition);
+	connect(ui->allTextList, &QListWidget::itemClicked, this,
+		&TextSlideshowDock::allTransition);
 
 	obs_frontend_add_event_callback(OBSFrontendEventWrapper, this);
 
