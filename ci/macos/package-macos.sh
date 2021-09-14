@@ -15,13 +15,8 @@ fi
 echo "=> Preparing package build"
 export QT_CELLAR_PREFIX="$(/usr/bin/find /usr/local/Cellar/qt -d 1 | sort -t '.' -k 1,1n -k 2,2n -k 3,3n | tail -n 1)"
 
-GIT_HASH=$(git rev-parse --short HEAD)
-GIT_BRANCH_OR_TAG=$(git name-rev --name-only HEAD | awk -F/ '{print $NF}')
-
-PKG_VERSION="$GIT_HASH-$GIT_BRANCH_OR_TAG"
-
-FILENAME_UNSIGNED="$PLUGIN_NAME-$PKG_VERSION-Unsigned.pkg"
-FILENAME="$PLUGIN_NAME-$PKG_VERSION.pkg"
+FILENAME_UNSIGNED="$PLUGIN_NAME-$PLUGIN_VERSION-Unsigned.pkg"
+FILENAME="$PLUGIN_NAME-$PLUGIN_VERSION.pkg"
 
 echo "=> Modifying $PLUGIN_NAME.so"
 install_name_tool \
