@@ -91,10 +91,31 @@ static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
+static void callback(void *data, calldata_t *cd)
+{
+	TextSlideshowDock *dock = reinterpret_cast<TextSlideshowDock *>(data);
+	dock->refreshPreview();
+	dock->refreshProgram();
+	dock->refreshAll();
+}
+
+static void register_obs_signal_handler(TextSlideshowDock *dock)
+{
+	const char *source_signals[] = {"source_create", "source_destroy",
+					"source_rename", "source_save"};
+
+	signal_handler_t *obs_handler = obs_get_signal_handler();
+	for (int i = 0; i < 4; i++) {
+		signal_handler_connect(obs_handler, source_signals[i], callback,
+				       dock);
+	}
+}
+
 void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event)
 {
 	switch (event) {
 	case OBS_FRONTEND_EVENT_FINISHED_LOADING:
+		register_obs_signal_handler(this);
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 	case OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED:
 	case OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED:
@@ -239,6 +260,7 @@ void TextSlideshowDock::updateTexts(QListWidget *textList,
 
 void TextSlideshowDock::refreshPreview()
 {
+	blog(LOG_INFO, "%s", "refreshing preview");
 	updateSources(obs_frontend_get_current_preview_scene(),
 		      ui->previewSourceBox, preview_text_slideshows,
 		      &preview_active_slideshow);
@@ -258,6 +280,7 @@ void TextSlideshowDock::refreshPreview()
 
 void TextSlideshowDock::refreshProgram()
 {
+	blog(LOG_INFO, "%s", "refreshing program");
 	updateSources(obs_frontend_get_current_scene(), ui->programSourceBox,
 		      program_text_slideshows, &program_active_slideshow);
 
@@ -276,6 +299,7 @@ void TextSlideshowDock::refreshProgram()
 
 void TextSlideshowDock::refreshAll()
 {
+	blog(LOG_INFO, "%s", "refreshing all");
 	ui->allSourceBox->clear();
 	all_text_slideshows.clear();
 
@@ -348,14 +372,6 @@ void TextSlideshowDock::allTransition(QListWidgetItem *item)
 	}
 }
 
-static void callback(void *data, calldata_t *cd)
-{
-	TextSlideshowDock *dock = reinterpret_cast<TextSlideshowDock *>(data);
-	dock->refreshPreview();
-	dock->refreshProgram();
-	dock->refreshAll();
-}
-
 TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 	: QDockWidget(parent), ui(new Ui::TextSlideshowDock)
 {
@@ -366,15 +382,6 @@ TextSlideshowDock::TextSlideshowDock(QWidget *parent)
 	program_active_slideshow.index = -1;
 	all_active_slideshow.source = NULL;
 	all_active_slideshow.index = -1;
-
-	const char *source_signals[] = {"source_create", "source_destroy",
-					"source_rename", "source_save"};
-
-	signal_handler_t *obs_handler = obs_get_signal_handler();
-	for (int i = 0; i < 4; i++) {
-		signal_handler_connect(obs_handler, source_signals[i], callback,
-				       this);
-	}
 
 	connect(ui->previewSourceBox, QOverload<int>::of(&QComboBox::activated),
 		this, &TextSlideshowDock::changeActivePreviewSource);
