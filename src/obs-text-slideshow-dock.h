@@ -50,7 +50,12 @@ private:
 				   struct slideshow_t *active_slideshow);
 	void updateSources(obs_source_t *scene_source, QComboBox *sourceBox,
 			   vector<obs_source_t *> &text_slideshows,
-			   struct slideshow_t *active_slideshow);
+			   struct slideshow_t *active_slideshow,
+			   bool enum_all_sources = false);
+	void updateDockTab(vector<obs_source_t *> &text_slideshows,
+			   QComboBox *sourceBox, QListWidget *textList,
+			   vector<const char *> &texts,
+			   struct slideshow_t *active_slidshow);
 	void updateTexts(QListWidget *textList, vector<const char *> &texts,
 			 struct slideshow_t *active_slideshow);
 	void previewTransition(QListWidgetItem *item);

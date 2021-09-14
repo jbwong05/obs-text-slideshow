@@ -206,23 +206,26 @@ void TextSlideshowDock::chooseNewActiveSource(
 void TextSlideshowDock::updateSources(obs_source_t *scene_source,
 				      QComboBox *sourceBox,
 				      vector<obs_source_t *> &text_slideshows,
-				      struct slideshow_t *active_slideshow)
+				      struct slideshow_t *active_slideshow,
+				      bool enum_all_sources)
 {
-	obs_scene_t *scene = NULL;
-
-	if (!scene_source) {
-		scene_source = obs_frontend_get_current_scene();
-	}
-
 	sourceBox->clear();
 	text_slideshows.clear();
 
 	struct found_text_slideshows found_text_slideshows;
 	found_text_slideshows.ordered_slideshows = &text_slideshows;
 
-	scene = obs_scene_from_source(scene_source);
-	obs_scene_enum_items(scene, findTextSlideshowSources,
-			     &found_text_slideshows);
+	if (!enum_all_sources) {
+		if (!scene_source) {
+			scene_source = obs_frontend_get_current_scene();
+		}
+
+		obs_scene_t *scene = obs_scene_from_source(scene_source);
+		obs_scene_enum_items(scene, findTextSlideshowSources,
+				     &found_text_slideshows);
+	} else {
+		obs_enum_sources(checkIfSlideshow, &found_text_slideshows);
+	}
 
 	active_slideshow->index = -1;
 
@@ -237,6 +240,23 @@ void TextSlideshowDock::updateSources(obs_source_t *scene_source,
 
 	if (scene_source) {
 		obs_source_release(scene_source);
+	}
+}
+
+void TextSlideshowDock::updateDockTab(vector<obs_source_t *> &text_slideshows,
+				      QComboBox *sourceBox,
+				      QListWidget *textList,
+				      vector<const char *> &texts,
+				      struct slideshow_t *active_slidshow)
+{
+	if (text_slideshows.size() == 0) {
+		sourceBox->addItem(
+			"No Text Slide Show sources found on current scene");
+		textList->clear();
+	} else {
+		chooseNewActiveSource(sourceBox, text_slideshows,
+				      active_slidshow);
+		updateTexts(textList, texts, active_slidshow);
 	}
 }
 
@@ -260,74 +280,29 @@ void TextSlideshowDock::updateTexts(QListWidget *textList,
 
 void TextSlideshowDock::refreshPreview()
 {
-	blog(LOG_INFO, "%s", "refreshing preview");
 	updateSources(obs_frontend_get_current_preview_scene(),
 		      ui->previewSourceBox, preview_text_slideshows,
 		      &preview_active_slideshow);
-
-	if (preview_text_slideshows.size() == 0) {
-		ui->previewSourceBox->addItem(
-			"No Text Slide Show sources found on current scene");
-		ui->previewTextList->clear();
-	} else {
-		chooseNewActiveSource(ui->previewSourceBox,
-				      preview_text_slideshows,
-				      &preview_active_slideshow);
-		updateTexts(ui->previewTextList, preview_texts,
-			    &preview_active_slideshow);
-	}
+	updateDockTab(preview_text_slideshows, ui->previewSourceBox,
+		      ui->previewTextList, preview_texts,
+		      &preview_active_slideshow);
 }
 
 void TextSlideshowDock::refreshProgram()
 {
-	blog(LOG_INFO, "%s", "refreshing program");
 	updateSources(obs_frontend_get_current_scene(), ui->programSourceBox,
 		      program_text_slideshows, &program_active_slideshow);
-
-	if (program_text_slideshows.size() == 0) {
-		ui->programSourceBox->addItem(
-			"No Text Slide Show sources found on current scene");
-		ui->programTextList->clear();
-	} else {
-		chooseNewActiveSource(ui->programSourceBox,
-				      program_text_slideshows,
-				      &program_active_slideshow);
-		updateTexts(ui->programTextList, program_texts,
-			    &program_active_slideshow);
-	}
+	updateDockTab(program_text_slideshows, ui->programSourceBox,
+		      ui->programTextList, program_texts,
+		      &program_active_slideshow);
 }
 
 void TextSlideshowDock::refreshAll()
 {
-	blog(LOG_INFO, "%s", "refreshing all");
-	ui->allSourceBox->clear();
-	all_text_slideshows.clear();
-
-	struct found_text_slideshows found_text_slideshows;
-	found_text_slideshows.ordered_slideshows = &all_text_slideshows;
-
-	obs_enum_sources(checkIfSlideshow, &found_text_slideshows);
-
-	all_active_slideshow.index = -1;
-
-	for (unsigned int i = 0; i < all_text_slideshows.size(); i++) {
-		const char *name = obs_source_get_name(all_text_slideshows[i]);
-		ui->allSourceBox->addItem(name);
-
-		if (all_active_slideshow.source == all_text_slideshows[i]) {
-			all_active_slideshow.index = i;
-		}
-	}
-
-	if (all_text_slideshows.size() == 0) {
-		ui->allSourceBox->addItem(
-			"No Text Slide Show sources found on current scene");
-		ui->allTextList->clear();
-	} else {
-		chooseNewActiveSource(ui->allSourceBox, all_text_slideshows,
-				      &all_active_slideshow);
-		updateTexts(ui->allTextList, all_texts, &all_active_slideshow);
-	}
+	updateSources(NULL, ui->allSourceBox, all_text_slideshows,
+		      &all_active_slideshow, true);
+	updateDockTab(all_text_slideshows, ui->allSourceBox, ui->allTextList,
+		      all_texts, &all_active_slideshow);
 }
 
 void TextSlideshowDock::previewTransition(QListWidgetItem *item)
