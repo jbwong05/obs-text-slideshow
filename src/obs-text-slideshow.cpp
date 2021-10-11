@@ -19,6 +19,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "obs-text-slideshow.h"
 #include <vector>
 #include <algorithm>
+#include <obs-frontend-api.h>
 #include "files.h"
 
 using std::vector;
@@ -410,6 +411,12 @@ void text_ss_update(void *data, obs_data_t *settings,
 		tr_name = "swipe_transition";
 	else if (astrcmpi(tr_name, TR_SLIDE) == 0)
 		tr_name = "slide_transition";
+	else if (astrcmpi(tr_name, "obs_stinger_transition") == 0)
+		tr_name = "obs_stinger_transition";
+	else if (astrcmpi(tr_name, "fade_to_color_transition") == 0)
+		tr_name = "fade_to_color_transition";
+	else if (astrcmpi(tr_name, "wipe_transition") == 0)
+		tr_name = "wipe_transition";
 	else
 		tr_name = "fade_transition";
 
@@ -865,6 +872,13 @@ static bool use_custom_delim_changed(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
+static bool transition_settings_clicked(obs_properties_t *props,
+					obs_property_t *property, void *data)
+{
+	struct text_slideshow *text_ss = (text_slideshow *)data;
+	return true;
+}
+
 void ss_properites(void *data, obs_properties_t *props)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
@@ -941,10 +955,20 @@ void ss_properites(void *data, obs_properties_t *props)
 	p = obs_properties_add_list(props, S_TRANSITION, T_TRANSITION,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, T_TR_CUT, TR_CUT);
-	obs_property_list_add_string(p, T_TR_FADE, TR_FADE);
-	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
-	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
+
+	size_t idx = 0;
+	const char *id;
+
+	/* automatically add transitions that have no configuration (things
+	 * such as cut/fade/etc) */
+	while (obs_enum_transition_types(idx++, &id)) {
+		const char *name = obs_source_get_display_name(id);
+		obs_property_list_add_string(p, name, id);
+	}
+
+	obs_properties_add_button2(props, "transition_settings",
+				   "Transition Settings",
+				   transition_settings_clicked, text_ss);
 
 	obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50, 3600000,
 			       50);
