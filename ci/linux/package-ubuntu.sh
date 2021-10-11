@@ -14,7 +14,7 @@ PAGER="cat" sudo checkinstall -y --type=debian --fstrans=no --nodoc \
 	--pkgname="$PLUGIN_NAME" --pkgversion="$PLUGIN_VERSION" \
 	--pkglicense="GPLv2.0" --maintainer="$LINUX_MAINTAINER_EMAIL" \
 	--pkggroup="video" \
-	--requires="obs-studio \(\>= 27.0.0\), libqt5core5a, libqt5widgets5" \
+	--requires="obs-studio \(\>= 27.0.0\), libqt5core5a \(\>= 5.14\), libqt5widgets5 \(\>= 5.14\)" \
 	--pakdir="../package"
 
 sudo chmod ao+r ../package/*
