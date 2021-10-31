@@ -41,7 +41,6 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 	fseek(file, 0, SEEK_SET);
 
-	unsigned int curr_index = 0;
 	char chunk[CHUNK_LEN];
 	memset(chunk, 0, CHUNK_LEN);
 	bool add_new_line = true;
@@ -82,6 +81,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 			} else {
 				// Need to append to existing string
+				unsigned int curr_index = texts.size() - 1;
 				size_t existing_len = strlen(texts[curr_index]);
 				char *new_ptr = (char *)brealloc(
 					(void *)texts[curr_index],
@@ -138,7 +138,6 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 
 	fseek(file, 0, SEEK_SET);
 
-	unsigned int curr_index = 0;
 	char line[CHUNK_LEN];
 	memset(line, 0, CHUNK_LEN);
 	bool add_new_line = true;
@@ -150,7 +149,6 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 		     line[curr_len - 1] == '\n') ||
 		    (curr_len == 1 && line[curr_len - 1] == '\n')) {
 			add_new_line = true;
-			curr_index++;
 			continue;
 		}
 
@@ -173,6 +171,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 
 		} else {
 			// Need to append to existing string
+			unsigned int curr_index = texts.size() - 1;
 			size_t existing_len = strlen(texts[curr_index]);
 			char *new_ptr =
 				(char *)brealloc((void *)texts[curr_index],
