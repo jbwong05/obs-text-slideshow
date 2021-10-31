@@ -166,14 +166,11 @@ static void text_properties(obs_properties_t *props)
 	obs_properties_add_int(props, S_LOG_LINES, T_LOG_LINES, 1, 1000, 1);
 
 	// Version must be at least 27.1.3
-	if (obs_get_version() >= ((27 << 24) | (1 << 16)))
-	{
+	if (obs_get_version() >= ((27 << 24) | (1 << 16))) {
 		obs_properties_add_color_alpha(props, S_COLOR_1, T_COLOR_1);
 
 		obs_properties_add_color_alpha(props, S_COLOR_2, T_COLOR_2);
-	}
-	else
-	{
+	} else {
 		obs_properties_add_color(props, S_COLOR_1, T_COLOR_1);
 
 		obs_properties_add_color(props, S_COLOR_2, T_COLOR_2);
