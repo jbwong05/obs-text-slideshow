@@ -141,6 +141,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 	char line[CHUNK_LEN];
 	memset(line, 0, CHUNK_LEN);
 	bool add_new_line = true;
+	bool prev_new_line = false;
 
 	while (fgets(line, sizeof(line), file)) {
 		size_t curr_len = strlen(line);
@@ -148,8 +149,13 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 		if ((curr_len == 2 && line[curr_len - 2] == '\r' &&
 		     line[curr_len - 1] == '\n') ||
 		    (curr_len == 1 && line[curr_len - 1] == '\n')) {
+
 			add_new_line = true;
-			continue;
+
+			if (!prev_new_line) {
+				prev_new_line = true;
+				continue;
+			}
 		}
 
 		if (add_new_line) {
@@ -168,6 +174,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 
 			texts.push_back(curr_text);
 			add_new_line = false;
+			prev_new_line = false;
 
 		} else {
 			// Need to append to existing string
