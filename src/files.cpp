@@ -64,6 +64,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 	while ((read = fread(chunk, sizeof(char), CHUNK_LEN, file))) {
 
 		bool end_in_delim = chunk[read - 1] == *delim;
+		add_new_line = add_new_line || chunk[0] == *delim;
 		chunk[read] = 0;
 
 #ifdef _WIN32
@@ -120,6 +121,8 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 				new_ptr[existing_len + token_len] = 0;
 				texts[curr_index] = new_ptr;
+
+				add_new_line = true;
 			}
 
 #ifdef _WIN32
