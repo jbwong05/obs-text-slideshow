@@ -64,6 +64,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 	while ((read = fread(chunk, sizeof(char), CHUNK_LEN, file))) {
 
 		bool end_in_delim = chunk[read - 1] == *delim;
+		chunk[read] = 0;
 
 #ifdef _WIN32
 		char *next_token = NULL;
