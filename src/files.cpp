@@ -81,7 +81,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 			} else {
 				// Need to append to existing string
-				unsigned int curr_index = texts.size() - 1;
+				size_t curr_index = texts.size() - 1;
 				size_t existing_len = strlen(texts[curr_index]);
 				char *new_ptr = (char *)brealloc(
 					(void *)texts[curr_index],
@@ -178,7 +178,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 
 		} else {
 			// Need to append to existing string
-			unsigned int curr_index = texts.size() - 1;
+			size_t curr_index = texts.size() - 1;
 			size_t existing_len = strlen(texts[curr_index]);
 			char *new_ptr =
 				(char *)brealloc((void *)texts[curr_index],
