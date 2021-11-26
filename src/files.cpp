@@ -61,7 +61,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 	bool add_new_line = true;
 	size_t read = 0;
 
-	while ((read = fread(chunk, sizeof(char), CHUNK_LEN, file))) {
+	while ((read = fread(chunk, sizeof(char), CHUNK_LEN - 1, file))) {
 
 		bool end_in_delim = chunk[read - 1] == *delim;
 		add_new_line = add_new_line || chunk[0] == *delim;
