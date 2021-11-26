@@ -4,20 +4,35 @@
 
 #define CHUNK_LEN 256
 
+static void remove_starting_new_line(char **text_ptr)
+{
+	char *text = *text_ptr;
+	size_t len = strlen(text);
+
+	if (len >= 2 && text[0] == '\r' && text[1] == '\n') {
+		*text_ptr += 2;
+	} else if (len >= 1 && text[0] == '\n') {
+		(*text_ptr)++;
+	}
+}
+
+static void remove_ending_new_line(char *text)
+{
+	size_t len = strlen(text);
+
+	if (len >= 2 && text[len - 2] == '\r' && text[len - 1] == '\n') {
+		text[len - 2] = 0;
+		text[len - 1] = 0;
+	} else if (len >= 1 && text[len - 1] == '\n') {
+		text[len - 1] = 0;
+	}
+}
+
 static void remove_new_lines(size_t start, vector<char *> &texts)
 {
 	// Remove trailing new lines
 	for (size_t i = start; i < texts.size(); i++) {
-		char *curr_text = texts[i];
-		size_t curr_len = strlen(curr_text);
-
-		if (curr_len >= 2 && curr_text[curr_len - 2] == '\r' &&
-		    curr_text[curr_len - 1] == '\n') {
-			curr_text[curr_len - 2] = 0;
-			curr_text[curr_len - 1] = 0;
-		} else if (curr_len >= 1 && curr_text[curr_len - 1] == '\n') {
-			curr_text[curr_len - 1] = 0;
-		}
+		remove_ending_new_line(texts[i]);
 	}
 }
 
@@ -41,15 +56,16 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 	fseek(file, 0, SEEK_SET);
 
-	unsigned int curr_index = 0;
 	char chunk[CHUNK_LEN];
 	memset(chunk, 0, CHUNK_LEN);
 	bool add_new_line = true;
 	size_t read = 0;
 
-	while ((read = fread(chunk, sizeof(char), CHUNK_LEN, file))) {
+	while ((read = fread(chunk, sizeof(char), CHUNK_LEN - 1, file))) {
 
 		bool end_in_delim = chunk[read - 1] == *delim;
+		add_new_line = add_new_line || chunk[0] == *delim;
+		chunk[read] = 0;
 
 #ifdef _WIN32
 		char *next_token = NULL;
@@ -60,6 +76,8 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 		while (token) {
 
+			remove_starting_new_line(&token);
+			remove_ending_new_line(token);
 			size_t token_len = strlen(token);
 
 			if (add_new_line) {
@@ -82,6 +100,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 			} else {
 				// Need to append to existing string
+				size_t curr_index = texts.size() - 1;
 				size_t existing_len = strlen(texts[curr_index]);
 				char *new_ptr = (char *)brealloc(
 					(void *)texts[curr_index],
@@ -102,6 +121,8 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 				new_ptr[existing_len + token_len] = 0;
 				texts[curr_index] = new_ptr;
+
+				add_new_line = true;
 			}
 
 #ifdef _WIN32
@@ -138,10 +159,10 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 
 	fseek(file, 0, SEEK_SET);
 
-	unsigned int curr_index = 0;
 	char line[CHUNK_LEN];
 	memset(line, 0, CHUNK_LEN);
 	bool add_new_line = true;
+	bool prev_new_line = false;
 
 	while (fgets(line, sizeof(line), file)) {
 		size_t curr_len = strlen(line);
@@ -149,9 +170,13 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 		if ((curr_len == 2 && line[curr_len - 2] == '\r' &&
 		     line[curr_len - 1] == '\n') ||
 		    (curr_len == 1 && line[curr_len - 1] == '\n')) {
+
 			add_new_line = true;
-			curr_index++;
-			continue;
+
+			if (!prev_new_line) {
+				prev_new_line = true;
+				continue;
+			}
 		}
 
 		if (add_new_line) {
@@ -170,9 +195,11 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 
 			texts.push_back(curr_text);
 			add_new_line = false;
+			prev_new_line = false;
 
 		} else {
 			// Need to append to existing string
+			size_t curr_index = texts.size() - 1;
 			size_t existing_len = strlen(texts[curr_index]);
 			char *new_ptr =
 				(char *)brealloc((void *)texts[curr_index],
