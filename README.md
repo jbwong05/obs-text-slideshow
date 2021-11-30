@@ -4,6 +4,7 @@
 [![Downloads](https://img.shields.io/github/downloads/jbwong05/obs-text-slideshow/total?cacheSeconds=3600)](https://github.com/jbwong05/obs-text-slideshow/releases)
 ![CI Multiplatform Build](https://github.com/jbwong05/obs-text-slideshow/actions/workflows/main.yml/badge.svg)
 ![Clang Format](https://github.com/jbwong05/obs-text-slideshow/actions/workflows/clang-format.yml/badge.svg)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?business=924NBJPZRVNXY&no_recurring=0&currency_code=USD)
 
 Inspired by the built in [image slideshow](https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/obs-slideshow.c), except for text sources instead. Both Free Type 2 and GDI+ are supported. Useful for displaying song lyrics, captions, etc.
 
