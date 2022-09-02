@@ -8,6 +8,8 @@
 
 Inspired by the built in [image slideshow](https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/obs-slideshow.c), except for text sources instead. Both Free Type 2 and GDI+ are supported. Useful for displaying song lyrics, captions, etc.
 
+Note: This plugin is not under active development and has not been updated to support OBS 28.0 as I do not have time at the moment. If you wish to continue development of this plugin, feel free to fork the repo
+
 ## Usage
 This plugin functions exactly as the built in [image slideshow](https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/obs-slideshow.c) plugin, except instead of transitioning between image sources it transitions between text sources instead. Simply click the add source button and add the Text Slide Show source. Text sources can be added manually using the default `Slide Texts` box or read from file by selecting the read from file option and specifying the file path(s). The expected format of the text file(s) is described [below](https://github.com/jbwong05/obs-text-slideshow#text-file-format). Transitioning between text sources manually can be done using OBS's media controls or using the built in [dock](https://github.com/jbwong05/obs-text-slideshow#dock).
 
