@@ -12,12 +12,10 @@ set(LINUX_MAINTAINER_EMAIL "jbwong05@gmail.com")
 
 # Add your custom source files here - header files are optional and only required for visibility
 # e.g. in Xcode or Visual Studio
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE 
-  src/plugin-main.cpp
-  src/obs-text-freetype2-slideshow.cpp
-  src/obs-text-slideshow.cpp
-  src/obs-text-slideshow-dock.cpp
-  src/files.cpp)
+target_sources(
+  ${CMAKE_PROJECT_NAME}
+  PRIVATE src/plugin-main.cpp src/obs-text-freetype2-slideshow.cpp src/obs-text-slideshow.cpp
+          src/obs-text-slideshow-dock.cpp src/files.cpp)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
