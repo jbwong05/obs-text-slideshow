@@ -1,20 +1,6 @@
 name: Plugin Build
 
-on:
-  push:
-    paths-ignore:
-      - '**.md'
-    branches:
-      - master
-      - main
-    tags:
-      - '*'
-  pull_request:
-    paths-ignore:
-      - '**.md'
-    branches:
-      - master
-      - main
+on: [push, pull_request]
 
 env:
   PLUGIN_NAME: 'obs-text-slideshow'
