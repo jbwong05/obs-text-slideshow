@@ -36,6 +36,7 @@ void TextSlideshowDock::OBSFrontendEventWrapper(enum obs_frontend_event event,
 static bool findTextSlideshowSources(obs_scene_t *scene, obs_sceneitem_t *item,
 				     void *param)
 {
+	UNUSED_PARAMETER(scene);
 
 	obs_source_t *source = NULL;
 	source = obs_sceneitem_get_source(item);
@@ -88,6 +89,8 @@ void TextSlideshowDock::OBSFrontendEvent(enum obs_frontend_event event)
 	case OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED:
 	case OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED:
 		refreshProgram();
+		refreshPreview();
+		break;
 	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
 		refreshPreview();
 		break;
@@ -122,7 +125,7 @@ void TextSlideshowDock::setActiveSource(int index, QComboBox *sourceBox,
 					vector<obs_source_t *> &text_slideshows,
 					struct slideshow_t *active_slideshow)
 {
-	if (index >= 0 && index < text_slideshows.size()) {
+	if (index >= 0 && (size_t)index < text_slideshows.size()) {
 		active_slideshow->source = text_slideshows[index];
 		active_slideshow->index = index;
 		sourceBox->setCurrentIndex(index);
@@ -255,34 +258,32 @@ void TextSlideshowDock::refreshProgram()
 
 void TextSlideshowDock::previewTransition(QListWidgetItem *item)
 {
-	int index = ui->previewTextList->row(item);
+	size_t index = ui->previewTextList->row(item);
 
-	if (index >= 0) {
-		proc_handler_t *handler = obs_source_get_proc_handler(
-			preview_active_slideshow.source);
-		calldata_t cd = {0};
-		calldata_set_int(&cd, "index", index);
-		proc_handler_call(handler, "dock_transition", &cd);
-		calldata_free(&cd);
-	}
+	proc_handler_t *handler =
+		obs_source_get_proc_handler(preview_active_slideshow.source);
+	calldata_t cd = {0};
+	calldata_set_int(&cd, "index", index);
+	proc_handler_call(handler, "dock_transition", &cd);
+	calldata_free(&cd);
 }
 
 void TextSlideshowDock::programTransition(QListWidgetItem *item)
 {
-	int index = ui->programTextList->row(item);
+	size_t index = ui->programTextList->row(item);
 
-	if (index >= 0) {
-		proc_handler_t *handler = obs_source_get_proc_handler(
-			program_active_slideshow.source);
-		calldata_t cd = {0};
-		calldata_set_int(&cd, "index", index);
-		proc_handler_call(handler, "dock_transition", &cd);
-		calldata_free(&cd);
-	}
+	proc_handler_t *handler =
+		obs_source_get_proc_handler(program_active_slideshow.source);
+	calldata_t cd = {0};
+	calldata_set_int(&cd, "index", index);
+	proc_handler_call(handler, "dock_transition", &cd);
+	calldata_free(&cd);
 }
 
 static void callback(void *data, calldata_t *cd)
 {
+	UNUSED_PARAMETER(cd);
+
 	TextSlideshowDock *dock = reinterpret_cast<TextSlideshowDock *>(data);
 	dock->refreshPreview();
 	dock->refreshProgram();

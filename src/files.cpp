@@ -93,7 +93,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 				strncpy_s(curr_text, token_len + 1, token,
 					  token_len);
 #else
-				strncpy(curr_text, token, token_len);
+				memcpy(curr_text, token, token_len);
 #endif
 
 				texts.push_back(curr_text);
@@ -115,8 +115,8 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 				strncpy_s(new_ptr + existing_len, token_len + 1,
 					  token, token_len);
 #else
-				strncpy(new_ptr + existing_len, token,
-					token_len);
+				memcpy(new_ptr + existing_len, token,
+				       token_len);
 #endif
 
 				new_ptr[existing_len + token_len] = 0;
@@ -190,7 +190,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 #ifdef _WIN32
 			strncpy_s(curr_text, curr_len + 1, line, curr_len);
 #else
-			strncpy(curr_text, line, curr_len);
+			memcpy(curr_text, line, curr_len);
 #endif
 
 			texts.push_back(curr_text);
@@ -214,7 +214,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 			strncpy_s(new_ptr + existing_len, curr_len + 1, line,
 				  curr_len);
 #else
-			strncpy(new_ptr + existing_len, line, curr_len);
+			memcpy(new_ptr + existing_len, line, curr_len);
 #endif
 
 			new_ptr[existing_len + curr_len] = 0;
@@ -227,8 +227,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 	fclose(file);
 }
 
-void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
-	       vector<char *> &texts)
+void read_file(struct text_slideshow *text_ss, vector<char *> &texts)
 {
 
 	const char *file_path = text_ss->file.c_str();

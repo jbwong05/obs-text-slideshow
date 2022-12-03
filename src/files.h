@@ -6,5 +6,4 @@
 
 using std::vector;
 
-void read_file(struct text_slideshow *text_ss, obs_data_t *settings,
-	       vector<char *> &texts);
+void read_file(struct text_slideshow *text_ss, vector<char *> &texts);
