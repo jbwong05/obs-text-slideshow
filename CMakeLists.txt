@@ -58,13 +58,13 @@ if(OS_WINDOWS)
 
   if(MSVC)
     target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /W4)
-    target_include_directories(
-                ${CMAKE_PROJECT_NAME}
-                PRIVATE
-                ${CMAKE_CURRENT_SOURCE_DIR}/../obs-studio/deps/w32-pthreads)
-    target_link_libraries(${CMAKE_PROJECT_NAME}
-                PRIVATE 
-                ${CMAKE_CURRENT_SOURCE_DIR}/../obs-studio/plugin_build_x64/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib)
+    target_include_directories(${CMAKE_PROJECT_NAME}
+                               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../obs-studio/deps/w32-pthreads)
+    target_link_libraries(
+      ${CMAKE_PROJECT_NAME}
+      PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../obs-studio/plugin_build_x64/deps/w32-pthreads/RelWithDebInfo/w32-pthreads.lib
+    )
   endif()
   # --- End of section ---
 
