@@ -335,19 +335,6 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source)
 	return text_ss;
 }
 
-static void free_text_src(struct darray *array)
-{
-	DARRAY(struct text_data) text_srcs;
-	text_srcs.da = *array;
-
-	for (size_t i = 0; i < text_srcs.num; i++) {
-		bfree(text_srcs.array[i].text);
-		obs_source_release(text_srcs.array[i].source);
-	}
-
-	da_free(text_srcs);
-}
-
 static inline size_t random_text_src(struct text_slideshow *text_ss)
 {
 	return (size_t)rand() % text_ss->text_srcs.num;

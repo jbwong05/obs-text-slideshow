@@ -420,6 +420,8 @@ static obs_missing_files_t *gdiplus_missing_files(void *data)
 
 static bool enum_callback(void *param, obs_source_t *source)
 {
+	UNUSED_PARAMETER(param);
+
 	const char *id = obs_source_get_id(source);
 
 	if (strcmp(id, "text-gdiplus-slideshow") == 0) {
@@ -433,6 +435,8 @@ static bool enum_callback(void *param, obs_source_t *source)
 
 static void obs_frontend_event_wrapper(enum obs_frontend_event event, void *ptr)
 {
+	UNUSED_PARAMETER(ptr);
+
 	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
 		obs_enum_sources(enum_callback, NULL);
 	}
