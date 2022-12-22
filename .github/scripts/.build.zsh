@@ -236,6 +236,13 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
     if [[ ${generator} == 'Unix Makefiles' ]] cmake_args+=(--parallel ${num_procs})
     cmake --build build_${target##*-} --config ${BUILD_CONFIG:-RelWithDebInfo} ${cmake_args}
   }
+
+  if [[ ${host_os} == 'macos' ]] {
+    log_info "Installing ${product_name}..."
+    local -a cmake_args=()
+    if (( _loglevel > 1 )) cmake_args+=(--verbose)
+    cmake --install build_${target##*-} --config ${BUILD_CONFIG:-RelWithDebInfo} --prefix "${project_root}/release" ${cmake_args}
+  }
   popd
 }
 
