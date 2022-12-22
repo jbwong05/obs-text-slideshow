@@ -1035,6 +1035,21 @@ void text_ss_previous_slide(void *data)
 	do_transition(text_ss, false);
 }
 
+bool text_ss_reload(void *param, obs_source_t *source) 
+{
+	UNUSED_PARAMETER(param);
+
+	const char *id = obs_source_get_id(source);
+
+	if (strcmp(id, (const char *)param) == 0) {
+		obs_data_t *settings = obs_source_get_settings(source);
+		obs_source_update(source, settings);
+		obs_data_release(settings);
+	}
+
+	return true;
+}
+
 enum obs_media_state text_ss_get_state(void *data)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;

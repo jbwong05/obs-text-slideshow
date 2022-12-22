@@ -17,8 +17,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 #include <obs-module.h>
+#include <obs-frontend-api.h>
 #include "obs-text-slideshow.h"
 #include "files.h"
+
+#define TEXT_FREETYPE2_SS_ID "text-freetype2-slideshow"
 
 #define S_FONT "font"
 #define S_TEXT "text"
@@ -237,10 +240,19 @@ static obs_missing_files_t *freetype2_missing_files(void *data)
 	return files;
 }
 
+static void obs_frontend_event_wrapper(enum obs_frontend_event event, void *ptr)
+{
+	UNUSED_PARAMETER(ptr);
+
+	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
+		obs_enum_sources(text_ss_reload, (void *)TEXT_FREETYPE2_SS_ID);
+	}
+}
+
 void load_text_freetype2_slideshow()
 {
 	obs_source_info info = {};
-	info.id = "text-freetype2-slideshow";
+	info.id = TEXT_FREETYPE2_SS_ID;
 	info.type = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
 			    OBS_SOURCE_COMPOSITE |
@@ -272,4 +284,5 @@ void load_text_freetype2_slideshow()
 	info.missing_files = freetype2_missing_files;
 
 	obs_register_source(&info);
+	obs_frontend_add_event_callback(obs_frontend_event_wrapper, NULL);
 }
