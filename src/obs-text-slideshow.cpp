@@ -297,7 +297,7 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source)
 		source, "SlideShow.Stop", obs_module_text("SlideShow.Stop"),
 		stop_hotkey, text_ss);
 
-	text_ss->prev_hotkey = obs_hotkey_register_source(
+	text_ss->next_hotkey = obs_hotkey_register_source(
 		source, "SlideShow.NextSlide",
 		obs_module_text("SlideShow.NextSlide"), next_slide_hotkey,
 		text_ss);
@@ -631,8 +631,10 @@ void text_ss_activate(void *data)
 	if (text_ss->behavior == BEHAVIOR_STOP_RESTART) {
 		text_ss->restart_on_activate = true;
 		text_ss->use_cut = true;
+		set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
 	} else if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
 		text_ss->pause_on_deactivate = false;
+		set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
 	}
 }
 
@@ -640,8 +642,10 @@ void text_ss_deactivate(void *data)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
-	if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE)
+	if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
 		text_ss->pause_on_deactivate = true;
+		set_media_state(text_ss, OBS_MEDIA_STATE_PAUSED);
+	}
 }
 
 static obs_source_t *get_transition(struct text_slideshow *text_ss)
@@ -933,9 +937,11 @@ void ss_properites(void *data, obs_properties_t *props)
 	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
 	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
 
-	obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50, 3600000,
-			       50);
+	p = obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50,
+				   3600000, 50);
+	obs_property_int_set_suffix(p, " ms");
 	obs_properties_add_int(props, S_TR_SPEED, T_TR_SPEED, 0, 3600000, 50);
+	obs_property_int_set_suffix(p, " ms");
 	obs_properties_add_bool(props, S_LOOP, T_LOOP);
 	obs_properties_add_bool(props, S_HIDE, T_HIDE);
 	obs_properties_add_bool(props, S_RANDOMIZE, T_RANDOMIZE);
@@ -950,7 +956,7 @@ void ss_properites(void *data, obs_properties_t *props)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);
 
 	char str[32];
-	snprintf(str, 32, "%dx%d", cx, cy);
+	snprintf(str, sizeof(str), "%dx%d", cx, cy);
 	obs_property_list_add_string(p, str, str);
 }
 

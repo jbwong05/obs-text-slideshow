@@ -46,7 +46,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 	}
 
 	uint16_t header = 0;
-	size_t num_read = fread(&header, 2, 1, file);
+	size_t num_read = fread(&header, 1, 2, file);
 	if (num_read == 1 && (header == 0xFEFF || header == 0xFFFE)) {
 		blog(LOG_WARNING, "UTF-16 not supported for file %s",
 		     file_path);
@@ -152,7 +152,7 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 	}
 
 	uint16_t header = 0;
-	size_t num_read = fread(&header, 2, 1, file);
+	size_t num_read = fread(&header, 1, 2, file);
 	if (num_read == 1 && (header == 0xFEFF || header == 0xFFFE)) {
 		blog(LOG_WARNING, "UTF-16 not supported for file %s",
 		     file_path);
