@@ -1035,7 +1035,7 @@ void text_ss_previous_slide(void *data)
 	do_transition(text_ss, false);
 }
 
-bool text_ss_reload(void *param, obs_source_t *source) 
+bool text_ss_reload(void *param, obs_source_t *source)
 {
 	UNUSED_PARAMETER(param);
 
