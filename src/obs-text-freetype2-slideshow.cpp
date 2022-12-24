@@ -240,15 +240,6 @@ static obs_missing_files_t *freetype2_missing_files(void *data)
 	return files;
 }
 
-static void obs_frontend_event_wrapper(enum obs_frontend_event event, void *ptr)
-{
-	UNUSED_PARAMETER(ptr);
-
-	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
-		obs_enum_sources(text_ss_reload, (void *)TEXT_FREETYPE2_SS_ID);
-	}
-}
-
 void load_text_freetype2_slideshow()
 {
 	obs_source_info info = {};
@@ -284,5 +275,4 @@ void load_text_freetype2_slideshow()
 	info.missing_files = freetype2_missing_files;
 
 	obs_register_source(&info);
-	obs_frontend_add_event_callback(obs_frontend_event_wrapper, NULL);
 }

@@ -133,12 +133,12 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 
 	if (!new_source)
 		new_source = get_source(&new_text_data.da, file_path, text);
-	if (new_source)
-		obs_source_update(new_source, settings);
 	if (!new_source)
 		new_source = (*text_creator)(file_path, text, settings);
 
 	if (new_source) {
+		obs_source_update(new_source, settings);
+
 		uint32_t new_cx = obs_source_get_width(new_source);
 		uint32_t new_cy = obs_source_get_height(new_source);
 
@@ -152,10 +152,16 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 		data.source = new_source;
 		da_push_back(new_text_data, &data);
 
-		if (new_cx > *cx)
-			*cx = new_cx;
-		if (new_cy > *cy)
-			*cy = new_cy;
+		if (strlen(text) > 0 && (new_cx == 0 || new_cy == 0)) {
+			pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
+			da_push_back(text_ss->sources_out_of_date, &new_source);
+			pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
+		} else {
+			if (new_cx > *cx)
+				*cx = new_cx;
+			if (new_cy > *cy)
+				*cy = new_cy;
+		}
 	}
 
 	*array = new_text_data.da;
@@ -189,6 +195,8 @@ void text_ss_destroy(void *data)
 	free_text_srcs(&text_ss->text_srcs.da);
 	pthread_mutex_destroy(&text_ss->mutex);
 	pthread_cond_destroy(&text_ss->dock_get_texts);
+	pthread_mutex_destroy(&text_ss->out_of_date_size_mutex);
+	da_free(text_ss->sources_out_of_date);
 	bfree(text_ss);
 }
 
@@ -327,6 +335,16 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source)
 	pthread_mutex_lock(&text_ss->mutex);
 	text_ss->dock_can_get_texts = false;
 	pthread_mutex_unlock(&text_ss->mutex);
+
+	pthread_mutex_init_value(&text_ss->out_of_date_size_mutex);
+	if (pthread_mutex_init(&text_ss->out_of_date_size_mutex, NULL) != 0) {
+		text_ss_destroy(text_ss);
+		return NULL;
+	}
+
+	pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
+	da_init(text_ss->sources_out_of_date);
+	pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
 
 	text_ss->settings = settings;
 
@@ -660,11 +678,60 @@ static obs_source_t *get_transition(struct text_slideshow *text_ss)
 	return tr;
 }
 
+static void text_ss_update_size(struct text_slideshow *text_ss)
+{
+	if (text_ss->sources_out_of_date.num > 0) {
+		pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
+		uint32_t max_x = 0;
+		uint32_t max_y = 0;
+
+		for (int i = text_ss->sources_out_of_date.num - 1; i >= 0;
+		     i--) {
+			obs_source_t *source =
+				text_ss->sources_out_of_date.array[i];
+
+			uint32_t new_x = obs_source_get_width(source);
+
+			if (new_x == 0) {
+				break;
+			}
+
+			uint32_t new_y = obs_source_get_height(source);
+
+			if (new_y == 0) {
+				break;
+			}
+
+			if (new_x > max_x) {
+				max_x = new_x;
+			}
+
+			if (new_y > max_y) {
+				max_y = new_y;
+			}
+
+			darray_pop_back(sizeof(obs_source_t *),
+					&text_ss->sources_out_of_date.da);
+		}
+
+		if (max_x > text_ss->cx) {
+			text_ss->cx = max_x;
+		}
+
+		if (max_y > text_ss->cy) {
+			text_ss->cy = max_y;
+		}
+
+		pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
+	}
+}
+
 void text_ss_video_render(void *data, gs_effect_t *effect)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 	obs_source_t *transition = get_transition(text_ss);
 
+	text_ss_update_size(text_ss);
 	if (transition) {
 		obs_source_video_render(transition);
 		obs_source_release(transition);

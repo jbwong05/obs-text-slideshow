@@ -130,6 +130,8 @@ struct text_slideshow {
 	float elapsed;
 	size_t cur_item;
 
+	pthread_mutex_t out_of_date_size_mutex;
+	DARRAY(obs_source_t *) sources_out_of_date;
 	uint32_t cx;
 	uint32_t cy;
 
