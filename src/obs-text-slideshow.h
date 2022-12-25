@@ -24,9 +24,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 using std::string;
+using std::unordered_set;
 using std::vector;
 
 #define S_TR_SPEED "transition_speed"
@@ -131,7 +133,7 @@ struct text_slideshow {
 	size_t cur_item;
 
 	pthread_mutex_t out_of_date_size_mutex;
-	DARRAY(obs_source_t *) sources_out_of_date;
+	unordered_set<obs_source_t *> *sources_out_of_date;
 	uint32_t cx;
 	uint32_t cy;
 

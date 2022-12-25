@@ -154,7 +154,7 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 
 		if (strlen(text) > 0 && (new_cx == 0 || new_cy == 0)) {
 			pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
-			da_push_back(text_ss->sources_out_of_date, &new_source);
+			text_ss->sources_out_of_date->insert(new_source);
 			pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
 		} else {
 			if (new_cx > *cx)
@@ -196,7 +196,7 @@ void text_ss_destroy(void *data)
 	pthread_mutex_destroy(&text_ss->mutex);
 	pthread_cond_destroy(&text_ss->dock_get_texts);
 	pthread_mutex_destroy(&text_ss->out_of_date_size_mutex);
-	da_free(text_ss->sources_out_of_date);
+	delete text_ss->sources_out_of_date;
 	bfree(text_ss);
 }
 
@@ -343,7 +343,7 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source)
 	}
 
 	pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
-	da_init(text_ss->sources_out_of_date);
+	text_ss->sources_out_of_date = new unordered_set<obs_source_t *>();
 	pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
 
 	text_ss->settings = settings;
@@ -680,26 +680,27 @@ static obs_source_t *get_transition(struct text_slideshow *text_ss)
 
 static void text_ss_update_size(struct text_slideshow *text_ss)
 {
-	if (text_ss->sources_out_of_date.num > 0) {
+	if (text_ss->sources_out_of_date->size() > 0) {
 		pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
 		uint32_t max_x = 0;
 		uint32_t max_y = 0;
 
-		for (int i = text_ss->sources_out_of_date.num - 1; i >= 0;
-		     i--) {
-			obs_source_t *source =
-				text_ss->sources_out_of_date.array[i];
+		auto iter = text_ss->sources_out_of_date->begin();
+		while (iter != text_ss->sources_out_of_date->end()) {
+			obs_source_t *source = *iter;
 
 			uint32_t new_x = obs_source_get_width(source);
 
 			if (new_x == 0) {
-				break;
+				iter++;
+				continue;
 			}
 
 			uint32_t new_y = obs_source_get_height(source);
 
 			if (new_y == 0) {
-				break;
+				iter++;
+				continue;
 			}
 
 			if (new_x > max_x) {
@@ -710,8 +711,7 @@ static void text_ss_update_size(struct text_slideshow *text_ss)
 				max_y = new_y;
 			}
 
-			darray_pop_back(sizeof(obs_source_t *),
-					&text_ss->sources_out_of_date.da);
+			iter = text_ss->sources_out_of_date->erase(iter);
 		}
 
 		if (max_x > text_ss->cx) {
