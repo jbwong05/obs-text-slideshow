@@ -442,6 +442,10 @@ void text_ss_update(void *data, obs_data_t *settings,
 		text_array = obs_data_get_array(settings, S_TEXTS);
 		text_count = obs_data_array_count(text_array);
 
+		if (text_count > 0) {
+			text_ss->sources_out_of_date->clear();
+		}
+
 		for (size_t i = 0; i < text_count; i++) {
 			obs_data_t *item = obs_data_array_item(text_array, i);
 			const char *curr_text =
@@ -680,6 +684,13 @@ static obs_source_t *get_transition(struct text_slideshow *text_ss)
 
 static void text_ss_update_size(struct text_slideshow *text_ss)
 {
+	// There is a bug where privately created text sources do
+	// not return a width or height upon creation. Forcing the
+	// text source to update or render itself does not fix the
+	// issue. This function serves as a workaround for this
+	// issue by retrieving the dimensions of the text source
+	// during a subsequent video render call for the text slideshow
+
 	if (text_ss->sources_out_of_date->size() > 0) {
 		pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
 		uint32_t max_x = 0;
