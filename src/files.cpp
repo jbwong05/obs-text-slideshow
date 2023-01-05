@@ -1,18 +1,49 @@
 #include "files.h"
+#include "string.h"
 #include <util/platform.h>
 #include "plugin-macros.generated.h"
 
+#define TABLE_SIZE 256
 #define CHUNK_LEN 256
+#ifdef _WIN32
+// Format is \r\n*\r\n\0 where '*' is the delim
+#define NEW_LINE "\r\n"
+#define DELIM_LEN 6
+#else
+// Format is \n*\n\0 where '*' is the delim
+#define NEW_LINE "\n"
+#define DELIM_LEN 4
+#endif
 
-static void remove_starting_new_line(char **text_ptr)
+static bool multichar_delim_strtok(char *str, const char *delim,
+				   vector<char *> &output)
 {
-	char *text = *text_ptr;
-	size_t len = strlen(text);
+	if (!str) {
+		return false;
+	}
 
-	if (len >= 2 && text[0] == '\r' && text[1] == '\n') {
-		*text_ptr += 2;
-	} else if (len >= 1 && text[0] == '\n') {
-		(*text_ptr)++;
+	int len = strlen(str);
+
+	char *curr = str;
+	char *ret = strstr(curr, delim);
+	while (ret) {
+
+		if (ret != str) {
+			*(ret - 1) = 0;
+		}
+
+		output.push_back(curr);
+		curr = ret + DELIM_LEN;
+
+		ret = strstr(curr, delim);
+	}
+
+	if (curr - str < len) {
+		output.push_back(curr);
+		return true;
+	} else {
+		output.push_back(NULL);
+		return false;
 	}
 }
 
@@ -37,7 +68,7 @@ static void remove_new_lines(size_t start, vector<char *> &texts)
 }
 
 static void load_text_from_file(vector<char *> &texts, const char *file_path,
-				const char *delim)
+				const char *delim_char)
 {
 	FILE *file = os_fopen(file_path, "rb"); /* should check the result */
 	if (file == NULL) {
@@ -58,48 +89,44 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 	char chunk[CHUNK_LEN];
 	memset(chunk, 0, CHUNK_LEN);
-	bool add_new_line = true;
+	char delim[DELIM_LEN];
+	memset(delim, 0, DELIM_LEN);
+
+#ifdef _WIN32
+	// Format is \r\n*\0\0\0 where '*' is the delim
+	delim[0] = '\r';
+	delim[1] = '\n';
+	delim[2] = delim_char[0];
+#else
+	// Format is \n*\0\0 where '*' is the delim
+	delim[0] = '\n';
+	delim[1] = delim_char[0];
+#endif
+
+	bool append = false;
 	size_t read = 0;
 
+	vector<char *> tokens;
 	read = fread(chunk, sizeof(char), CHUNK_LEN - 1, file);
 	while (read) {
 
-		bool end_in_delim = chunk[read - 1] == *delim;
-		add_new_line = add_new_line || chunk[0] == *delim;
 		chunk[read] = 0;
 
-#ifdef _WIN32
-		char *next_token = NULL;
-		char *token = strtok_s(chunk, delim, &next_token);
-#else
-		char *token = strtok(chunk, delim);
-#endif
+		tokens.clear();
+		bool append_next_iteration =
+			multichar_delim_strtok(chunk, delim, tokens);
 
-		while (token) {
+		for (unsigned int i = 0; i < tokens.size(); i++) {
+			const char *token = tokens[i];
 
-			remove_starting_new_line(&token);
-			remove_ending_new_line(token);
+			if (!token) {
+				token = NEW_LINE;
+			}
+			blog(LOG_INFO, "TOKEN: %s", token);
+
 			size_t token_len = strlen(token);
 
-			if (add_new_line) {
-				// Need to add new string
-				char *curr_text =
-					(char *)bzalloc(token_len + 1);
-
-				if (curr_text == NULL) {
-					fclose(file);
-					return;
-				}
-#ifdef _WIN32
-				strncpy_s(curr_text, token_len + 1, token,
-					  token_len);
-#else
-				memcpy(curr_text, token, token_len);
-#endif
-
-				texts.push_back(curr_text);
-
-			} else {
+			if (i == 0 && append) {
 				// Need to append to existing string
 				size_t curr_index = texts.size() - 1;
 				size_t existing_len = strlen(texts[curr_index]);
@@ -122,23 +149,29 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 				new_ptr[existing_len + token_len] = 0;
 				texts[curr_index] = new_ptr;
+			} else {
+				// Need to add new string
+				char *curr_text =
+					(char *)bzalloc(token_len + 1);
 
-				add_new_line = true;
-			}
-
+				if (curr_text == NULL) {
+					fclose(file);
+					return;
+				}
 #ifdef _WIN32
-			token = strtok_s(NULL, delim, &next_token);
+				strncpy_s(curr_text, token_len + 1, token,
+					  token_len);
 #else
-			token = strtok(NULL, delim);
+				memcpy(curr_text, token, token_len);
 #endif
+				texts.push_back(curr_text);
+			}
 		}
 
-		add_new_line = end_in_delim;
+		append = append_next_iteration;
 
 		read = fread(chunk, sizeof(char), CHUNK_LEN - 1, file);
 	}
-
-	remove_new_lines(texts.size() - 1, texts);
 
 	fclose(file);
 }
