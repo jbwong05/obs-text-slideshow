@@ -15,7 +15,7 @@ set(LINUX_MAINTAINER_EMAIL "jbwong05@gmail.com")
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/plugin-main.cpp src/obs-text-freetype2-slideshow.cpp src/obs-text-slideshow.cpp
-          src/obs-text-slideshow-dock.cpp src/files.cpp)
+          src/obs-text-slideshow-dock.cpp src/files.cpp src/utils.cpp)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
@@ -82,7 +82,7 @@ elseif(OS_MACOS)
 
   # --- Linux-specific build settings and tasks ---
 else()
-  target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
+  target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall -g)
 endif()
 # --- End of section ---
 

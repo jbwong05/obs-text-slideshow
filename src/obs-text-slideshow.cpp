@@ -365,6 +365,28 @@ static bool valid_extension(const char *ext)
 	return astrcmpi(ext, ".txt") == 0;
 }
 
+static void read_file(struct text_slideshow *text_ss, vector<char *> &texts)
+{
+	const char *file_path = text_ss->file.c_str();
+
+	if (!file_path || !*file_path || !os_file_exists(file_path)) {
+		blog(LOG_WARNING,
+		     "Failed to open %s for "
+		     "reading",
+		     file_path);
+	} else {
+		if (!text_ss->file.empty()) {
+
+			if (text_ss->custom_delim) {
+				load_text_from_file(texts, file_path,
+						    text_ss->custom_delim);
+			} else {
+				load_text_from_file(texts, file_path);
+			}
+		}
+	}
+}
+
 void text_ss_update(void *data, obs_data_t *settings,
 		    text_source_create text_creator,
 		    set_text_alignment set_alignment)

@@ -1,9 +1,10 @@
 #pragma once
 
 #include <vector>
-#include "obs-module.h"
 #include "obs-text-slideshow.h"
 
 using std::vector;
 
-void read_file(struct text_slideshow *text_ss, vector<char *> &texts);
+void load_text_from_file(vector<char *> &texts, const char *file_path,
+			 const char *delim);
+void load_text_from_file(vector<char *> &texts, const char *file_path);
