@@ -82,7 +82,7 @@ elseif(OS_MACOS)
 
   # --- Linux-specific build settings and tasks ---
 else()
-  target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall -g)
+  target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
 endif()
 # --- End of section ---
 

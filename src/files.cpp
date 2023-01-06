@@ -43,8 +43,6 @@ void load_text_from_file(vector<char *> &texts, const char *file_path,
 		for (unsigned int i = 0; i < tokens.size(); i++) {
 			const char *token = tokens[i];
 
-			blog(LOG_INFO, "TOKEN: %s", token);
-
 			if (i == 0 && texts.size() > 0 && append_first &&
 			    !(token_flags & START_WITH_DELIM)) {
 				// Need to append to existing string

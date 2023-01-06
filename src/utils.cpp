@@ -23,8 +23,8 @@ unsigned char multichar_delim_strtok(char *str, const char *delim,
 	memcpy(extended_delim + 1, delim, delim_len);
 #endif
 
-	unsigned int len = strlen(str);
-	unsigned int increment = 0;
+	size_t len = strlen(str);
+	size_t increment = 0;
 	bool add_next = true;
 
 	char *curr = str;
@@ -34,12 +34,12 @@ unsigned char multichar_delim_strtok(char *str, const char *delim,
 		// what we want to check for
 		// \n*\n or \n*\r\n or \r\n*\n or \r\n*\r\n
 
-		if (ret + delim_len + 1 - str < len &&
+		if (ret + delim_len + 1 > str + len &&
 		    ret[delim_len + 1] == '\n') {
 			// '\n*\n' case
 			increment = delim_len + 2;
 
-		} else if (ret + delim_len + 2 - str < len &&
+		} else if (ret + delim_len + 2 < str + len &&
 			   ret[delim_len + 1] == '\r' &&
 			   ret[delim_len + 2] == '\n') {
 			// '\n*\r\n' case
@@ -76,7 +76,7 @@ unsigned char multichar_delim_strtok(char *str, const char *delim,
 		ret = strstr(curr, extended_delim);
 	}
 
-	if (curr - str < len) {
+	if (curr < str + len) {
 		output.push_back(curr);
 	} else {
 		return_flags |= END_WITH_DELIM;
@@ -137,7 +137,7 @@ char *append_string(const char *original_str, const char *new_str)
 	}
 
 #ifdef _WIN32
-	strncpy_s(new_ptr + existing_len, new_len + 1, new_str new_len);
+	strncpy_s(new_ptr + existing_len, new_len + 1, new_str, new_len);
 #else
 	memcpy(new_ptr + existing_len, new_str, new_len);
 #endif
