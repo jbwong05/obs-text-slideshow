@@ -1,43 +1,12 @@
 #include "files.h"
-#include <util/platform.h>
+#include "obs-module.h"
 #include "plugin-macros.generated.h"
+#include "utils.h"
 
 #define CHUNK_LEN 256
 
-static void remove_starting_new_line(char **text_ptr)
-{
-	char *text = *text_ptr;
-	size_t len = strlen(text);
-
-	if (len >= 2 && text[0] == '\r' && text[1] == '\n') {
-		*text_ptr += 2;
-	} else if (len >= 1 && text[0] == '\n') {
-		(*text_ptr)++;
-	}
-}
-
-static void remove_ending_new_line(char *text)
-{
-	size_t len = strlen(text);
-
-	if (len >= 2 && text[len - 2] == '\r' && text[len - 1] == '\n') {
-		text[len - 2] = 0;
-		text[len - 1] = 0;
-	} else if (len >= 1 && text[len - 1] == '\n') {
-		text[len - 1] = 0;
-	}
-}
-
-static void remove_new_lines(size_t start, vector<char *> &texts)
-{
-	// Remove trailing new lines
-	for (size_t i = start; i < texts.size(); i++) {
-		remove_ending_new_line(texts[i]);
-	}
-}
-
-static void load_text_from_file(vector<char *> &texts, const char *file_path,
-				const char *delim)
+void load_text_from_file(vector<char *> &texts, const char *file_path,
+			 const char *delim)
 {
 	FILE *file = os_fopen(file_path, "rb"); /* should check the result */
 	if (file == NULL) {
@@ -58,92 +27,76 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path,
 
 	char chunk[CHUNK_LEN];
 	memset(chunk, 0, CHUNK_LEN);
-	bool add_new_line = true;
 	size_t read = 0;
-
+	vector<char *> tokens;
+	bool append_first = false;
 	read = fread(chunk, sizeof(char), CHUNK_LEN - 1, file);
+
 	while (read) {
 
-		bool end_in_delim = chunk[read - 1] == *delim;
-		add_new_line = add_new_line || chunk[0] == *delim;
 		chunk[read] = 0;
 
-#ifdef _WIN32
-		char *next_token = NULL;
-		char *token = strtok_s(chunk, delim, &next_token);
-#else
-		char *token = strtok(chunk, delim);
-#endif
+		tokens.clear();
+		unsigned char token_flags =
+			multichar_delim_strtok(chunk, delim, tokens);
 
-		while (token) {
+		for (unsigned int i = 0; i < tokens.size(); i++) {
+			const char *token = tokens[i];
 
-			remove_starting_new_line(&token);
-			remove_ending_new_line(token);
-			size_t token_len = strlen(token);
-
-			if (add_new_line) {
-				// Need to add new string
-				char *curr_text =
-					(char *)bzalloc(token_len + 1);
-
-				if (curr_text == NULL) {
-					fclose(file);
-					return;
-				}
-#ifdef _WIN32
-				strncpy_s(curr_text, token_len + 1, token,
-					  token_len);
-#else
-				memcpy(curr_text, token, token_len);
-#endif
-
-				texts.push_back(curr_text);
-
-			} else {
+			if (i == 0 && texts.size() > 0 && append_first &&
+			    !(token_flags & START_WITH_DELIM)) {
 				// Need to append to existing string
 				size_t curr_index = texts.size() - 1;
-				size_t existing_len = strlen(texts[curr_index]);
-				char *new_ptr = (char *)brealloc(
-					(void *)texts[curr_index],
-					existing_len + token_len + 1);
+				char *new_ptr =
+					append_string(texts[curr_index], token);
 
 				if (new_ptr == NULL) {
 					fclose(file);
 					return;
 				}
 
-#ifdef _WIN32
-				strncpy_s(new_ptr + existing_len, token_len + 1,
-					  token, token_len);
-#else
-				memcpy(new_ptr + existing_len, token,
-				       token_len);
-#endif
-
-				new_ptr[existing_len + token_len] = 0;
 				texts[curr_index] = new_ptr;
 
-				add_new_line = true;
-			}
+				// Account for delim split by chunk boundary
+				vector<char *> temp_tokens;
+				multichar_delim_strtok(new_ptr, delim,
+						       temp_tokens);
+				if (temp_tokens.size() > 1) {
+					const char *first = temp_tokens[0];
+					const char *second = temp_tokens[1];
 
-#ifdef _WIN32
-			token = strtok_s(NULL, delim, &next_token);
-#else
-			token = strtok(NULL, delim);
-#endif
+					char *new_first_ptr = (char *)brealloc(
+						(void *)texts[curr_index],
+						strlen(first));
+
+					if (new_first_ptr == NULL) {
+						fclose(file);
+						return;
+					}
+
+					texts[curr_index] = new_first_ptr;
+
+					if (!append_new_text(second, texts)) {
+						fclose(file);
+						return;
+					}
+				}
+			} else {
+				if (!append_new_text(token, texts)) {
+					fclose(file);
+					return;
+				}
+			}
 		}
 
-		add_new_line = end_in_delim;
-
+		append_first = !(token_flags & END_WITH_DELIM);
 		read = fread(chunk, sizeof(char), CHUNK_LEN - 1, file);
 	}
-
-	remove_new_lines(texts.size() - 1, texts);
 
 	fclose(file);
 }
 
-static void load_text_from_file(vector<char *> &texts, const char *file_path)
+void load_text_from_file(vector<char *> &texts, const char *file_path)
 {
 	FILE *file = os_fopen(file_path, "rb"); /* should check the result */
 	if (file == NULL) {
@@ -228,27 +181,4 @@ static void load_text_from_file(vector<char *> &texts, const char *file_path)
 	remove_new_lines(0, texts);
 
 	fclose(file);
-}
-
-void read_file(struct text_slideshow *text_ss, vector<char *> &texts)
-{
-
-	const char *file_path = text_ss->file.c_str();
-
-	if (!file_path || !*file_path || !os_file_exists(file_path)) {
-		blog(LOG_WARNING,
-		     "Failed to open %s for "
-		     "reading",
-		     file_path);
-	} else {
-		if (!text_ss->file.empty()) {
-
-			if (text_ss->custom_delim) {
-				load_text_from_file(texts, file_path,
-						    text_ss->custom_delim);
-			} else {
-				load_text_from_file(texts, file_path);
-			}
-		}
-	}
 }
