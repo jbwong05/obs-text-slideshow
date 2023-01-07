@@ -152,7 +152,8 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 		data.source = new_source;
 		da_push_back(new_text_data, &data);
 
-		if (strlen(text) > 0 && (new_cx == 0 || new_cy == 0)) {
+		if (text == NULL ||
+		    (strlen(text) > 0 && (new_cx == 0 || new_cy == 0))) {
 			pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
 			text_ss->sources_out_of_date->insert(new_source);
 			pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
