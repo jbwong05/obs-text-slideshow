@@ -627,11 +627,7 @@ else()
     endif()
 
     # Add resources from data directory
-    if(OS_LINUX)
-      setup_target_resources(${target} ${target})
-    else()
-      setup_target_resources(${target} obs-plugins/${target})
-    endif()
+    setup_target_resources(${target} obs-plugins/${target})
 
     # Set up plugin for testing in available OBS build on Windows
     if(OS_WINDOWS AND DEFINED OBS_BUILD_DIR)
