@@ -34,8 +34,8 @@ inputs:
     default: ''
   createInstaller:
     description: 'Create InnoSetup installer (Windows only)'
-    required: false
-    default: 'false'
+    required: true
+    default: 'true'
   workingDirectory:
     description: 'Working directory for packaging'
     required: false

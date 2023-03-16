@@ -4,7 +4,7 @@ param(
     [string] $Configuration = 'RelWithDebInfo',
     [ValidateSet('x86', 'x64', 'x86+x64')]
     [string] $Target,
-    [switch] $BuildInstaller = $false
+    [switch] $BuildInstaller = $true
 )
 
 $ErrorActionPreference = 'Stop'

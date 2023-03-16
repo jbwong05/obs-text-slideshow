@@ -316,7 +316,7 @@ jobs:
           path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*.zip
 
       - name: Package Plugin Installer
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
+        if: ${{ success() && github.event_name != 'pull_request' }}
         uses: ./plugin/.github/actions/package-plugin
         with:
           workingDirectory: ${{ github.workspace }}/plugin
@@ -325,7 +325,7 @@ jobs:
           createInstaller: true
 
       - name: Upload Installer Artifact
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
+        if: ${{ success() && github.event_name != 'pull_request' }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLUGIN_NAME }}-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}-installer
