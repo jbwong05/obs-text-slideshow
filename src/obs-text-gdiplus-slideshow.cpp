@@ -21,6 +21,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "obs-text-slideshow.h"
 #include "files.h"
 
+#define TEXT_GDIPLUS_SS_ID "text-gdiplus-slideshow"
+
 // text gdiplus
 #define S_FONT "font"
 #define S_USE_FILE "read_from_file"
@@ -418,30 +420,19 @@ static obs_missing_files_t *gdiplus_missing_files(void *data)
 	return files;
 }
 
-static bool enum_callback(void *param, obs_source_t *source)
-{
-	const char *id = obs_source_get_id(source);
-
-	if (strcmp(id, "text-gdiplus-slideshow") == 0) {
-		obs_data_t *settings = obs_source_get_settings(source);
-		obs_source_update(source, settings);
-		obs_data_release(settings);
-	}
-
-	return true;
-}
-
 static void obs_frontend_event_wrapper(enum obs_frontend_event event, void *ptr)
 {
+	UNUSED_PARAMETER(ptr);
+
 	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
-		obs_enum_sources(enum_callback, NULL);
+		obs_enum_sources(text_ss_reload, (void *)TEXT_GDIPLUS_SS_ID);
 	}
 }
 
 void load_text_gdiplus_slideshow()
 {
 	obs_source_info info = {};
-	info.id = "text-gdiplus-slideshow";
+	info.id = TEXT_GDIPLUS_SS_ID;
 	info.type = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
 			    OBS_SOURCE_COMPOSITE |
