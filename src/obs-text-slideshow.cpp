@@ -104,11 +104,11 @@ static obs_source_t *get_source(struct darray *array, const char *file_path,
 		if (file_path && curr_file_path &&
 		    strcmp(file_path, curr_file_path) == 0) {
 			source = text_srcs.array[i].source;
-			obs_source_addref(source);
+			obs_source_get_ref(source);
 			break;
 		} else if (text && curr_text && strcmp(text, curr_text) == 0) {
 			source = text_srcs.array[i].source;
-			obs_source_addref(source);
+			obs_source_get_ref(source);
 			break;
 		}
 	}
@@ -133,12 +133,12 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 
 	if (!new_source)
 		new_source = get_source(&new_text_data.da, file_path, text);
-	if (new_source)
-		obs_source_update(new_source, settings);
 	if (!new_source)
 		new_source = (*text_creator)(file_path, text, settings);
 
 	if (new_source) {
+		obs_source_update(new_source, settings);
+
 		uint32_t new_cx = obs_source_get_width(new_source);
 		uint32_t new_cy = obs_source_get_height(new_source);
 
@@ -152,10 +152,17 @@ static void add_text_src(struct text_slideshow *text_ss, struct darray *array,
 		data.source = new_source;
 		da_push_back(new_text_data, &data);
 
-		if (new_cx > *cx)
-			*cx = new_cx;
-		if (new_cy > *cy)
-			*cy = new_cy;
+		if (text == NULL ||
+		    (strlen(text) > 0 && (new_cx == 0 || new_cy == 0))) {
+			pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
+			text_ss->sources_out_of_date->insert(new_source);
+			pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
+		} else {
+			if (new_cx > *cx)
+				*cx = new_cx;
+			if (new_cy > *cy)
+				*cy = new_cy;
+		}
 	}
 
 	*array = new_text_data.da;
@@ -189,6 +196,8 @@ void text_ss_destroy(void *data)
 	free_text_srcs(&text_ss->text_srcs.da);
 	pthread_mutex_destroy(&text_ss->mutex);
 	pthread_cond_destroy(&text_ss->dock_get_texts);
+	pthread_mutex_destroy(&text_ss->out_of_date_size_mutex);
+	delete text_ss->sources_out_of_date;
 	bfree(text_ss);
 }
 
@@ -257,7 +266,7 @@ static void do_transition(void *data, bool to_null)
 
 static void dock_transition(void *data, calldata_t *cd)
 {
-	int index = (int)calldata_int(cd, "index");
+	size_t index = (size_t)calldata_int(cd, "index");
 
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
@@ -297,7 +306,7 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source)
 		source, "SlideShow.Stop", obs_module_text("SlideShow.Stop"),
 		stop_hotkey, text_ss);
 
-	text_ss->prev_hotkey = obs_hotkey_register_source(
+	text_ss->next_hotkey = obs_hotkey_register_source(
 		source, "SlideShow.NextSlide",
 		obs_module_text("SlideShow.NextSlide"), next_slide_hotkey,
 		text_ss);
@@ -328,24 +337,21 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source)
 	text_ss->dock_can_get_texts = false;
 	pthread_mutex_unlock(&text_ss->mutex);
 
+	pthread_mutex_init_value(&text_ss->out_of_date_size_mutex);
+	if (pthread_mutex_init(&text_ss->out_of_date_size_mutex, NULL) != 0) {
+		text_ss_destroy(text_ss);
+		return NULL;
+	}
+
+	pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
+	text_ss->sources_out_of_date = new unordered_set<obs_source_t *>();
+	pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
+
 	text_ss->settings = settings;
 
 	obs_source_update(source, settings);
 
 	return text_ss;
-}
-
-static void free_text_src(struct darray *array)
-{
-	DARRAY(struct text_data) text_srcs;
-	text_srcs.da = *array;
-
-	for (size_t i = 0; i < text_srcs.num; i++) {
-		bfree(text_srcs.array[i].text);
-		obs_source_release(text_srcs.array[i].source);
-	}
-
-	da_free(text_srcs);
 }
 
 static inline size_t random_text_src(struct text_slideshow *text_ss)
@@ -358,6 +364,28 @@ static bool valid_extension(const char *ext)
 	if (!ext)
 		return false;
 	return astrcmpi(ext, ".txt") == 0;
+}
+
+static void read_file(struct text_slideshow *text_ss, vector<char *> &texts)
+{
+	const char *file_path = text_ss->file.c_str();
+
+	if (!file_path || !*file_path || !os_file_exists(file_path)) {
+		blog(LOG_WARNING,
+		     "Failed to open %s for "
+		     "reading",
+		     file_path);
+	} else {
+		if (!text_ss->file.empty()) {
+
+			if (text_ss->custom_delim) {
+				load_text_from_file(texts, file_path,
+						    text_ss->custom_delim);
+			} else {
+				load_text_from_file(texts, file_path);
+			}
+		}
+	}
 }
 
 void text_ss_update(void *data, obs_data_t *settings,
@@ -437,6 +465,10 @@ void text_ss_update(void *data, obs_data_t *settings,
 		text_array = obs_data_get_array(settings, S_TEXTS);
 		text_count = obs_data_array_count(text_array);
 
+		if (text_count > 0) {
+			text_ss->sources_out_of_date->clear();
+		}
+
 		for (size_t i = 0; i < text_count; i++) {
 			obs_data_t *item = obs_data_array_item(text_array, i);
 			const char *curr_text =
@@ -462,7 +494,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 
 			// read file
 			vector<char *> texts;
-			read_file(text_ss, settings, texts);
+			read_file(text_ss, texts);
 
 			// add text source for every text read
 			for (unsigned int i = 0; i < texts.size(); i++) {
@@ -644,8 +676,10 @@ void text_ss_activate(void *data)
 	if (text_ss->behavior == BEHAVIOR_STOP_RESTART) {
 		text_ss->restart_on_activate = true;
 		text_ss->use_cut = true;
+		set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
 	} else if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
 		text_ss->pause_on_deactivate = false;
+		set_media_state(text_ss, OBS_MEDIA_STATE_PLAYING);
 	}
 }
 
@@ -653,8 +687,10 @@ void text_ss_deactivate(void *data)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
-	if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE)
+	if (text_ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
 		text_ss->pause_on_deactivate = true;
+		set_media_state(text_ss, OBS_MEDIA_STATE_PAUSED);
+	}
 }
 
 static obs_source_t *get_transition(struct text_slideshow *text_ss)
@@ -663,10 +699,65 @@ static obs_source_t *get_transition(struct text_slideshow *text_ss)
 
 	pthread_mutex_lock(&text_ss->mutex);
 	tr = text_ss->transition;
-	obs_source_addref(tr);
+	obs_source_get_ref(tr);
 	pthread_mutex_unlock(&text_ss->mutex);
 
 	return tr;
+}
+
+static void text_ss_update_size(struct text_slideshow *text_ss)
+{
+	// There is a bug where privately created text sources do
+	// not return a width or height upon creation. Forcing the
+	// text source to update or render itself does not fix the
+	// issue. This function serves as a workaround for this
+	// issue by retrieving the dimensions of the text source
+	// during a subsequent video render call for the text slideshow
+
+	if (text_ss->sources_out_of_date->size() > 0) {
+		pthread_mutex_lock(&text_ss->out_of_date_size_mutex);
+		uint32_t max_x = 0;
+		uint32_t max_y = 0;
+
+		auto iter = text_ss->sources_out_of_date->begin();
+		while (iter != text_ss->sources_out_of_date->end()) {
+			obs_source_t *source = *iter;
+
+			uint32_t new_x = obs_source_get_width(source);
+
+			if (new_x == 0) {
+				iter++;
+				continue;
+			}
+
+			uint32_t new_y = obs_source_get_height(source);
+
+			if (new_y == 0) {
+				iter++;
+				continue;
+			}
+
+			if (new_x > max_x) {
+				max_x = new_x;
+			}
+
+			if (new_y > max_y) {
+				max_y = new_y;
+			}
+
+			iter = text_ss->sources_out_of_date->erase(iter);
+		}
+
+		if (max_x > text_ss->cx) {
+			text_ss->cx = max_x;
+		}
+
+		if (max_y > text_ss->cy) {
+			text_ss->cy = max_y;
+		}
+
+		pthread_mutex_unlock(&text_ss->out_of_date_size_mutex);
+	}
 }
 
 void text_ss_video_render(void *data, gs_effect_t *effect)
@@ -674,6 +765,7 @@ void text_ss_video_render(void *data, gs_effect_t *effect)
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 	obs_source_t *transition = get_transition(text_ss);
 
+	text_ss_update_size(text_ss);
 	if (transition) {
 		obs_source_video_render(transition);
 		obs_source_release(transition);
@@ -946,9 +1038,11 @@ void ss_properites(void *data, obs_properties_t *props)
 	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
 	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
 
-	obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50, 3600000,
-			       50);
+	p = obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50,
+				   3600000, 50);
+	obs_property_int_set_suffix(p, " ms");
 	obs_properties_add_int(props, S_TR_SPEED, T_TR_SPEED, 0, 3600000, 50);
+	obs_property_int_set_suffix(p, " ms");
 	obs_properties_add_bool(props, S_LOOP, T_LOOP);
 	obs_properties_add_bool(props, S_HIDE, T_HIDE);
 	obs_properties_add_bool(props, S_RANDOMIZE, T_RANDOMIZE);
@@ -963,7 +1057,7 @@ void ss_properites(void *data, obs_properties_t *props)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);
 
 	char str[32];
-	snprintf(str, 32, "%dx%d", cx, cy);
+	snprintf(str, sizeof(str), "%dx%d", cx, cy);
 	obs_property_list_add_string(p, str, str);
 }
 
@@ -1046,6 +1140,21 @@ void text_ss_previous_slide(void *data)
 		--text_ss->cur_item;
 
 	do_transition(text_ss, false);
+}
+
+bool text_ss_reload(void *param, obs_source_t *source)
+{
+	UNUSED_PARAMETER(param);
+
+	const char *id = obs_source_get_id(source);
+
+	if (strcmp(id, (const char *)param) == 0) {
+		obs_data_t *settings = obs_source_get_settings(source);
+		obs_source_update(source, settings);
+		obs_data_release(settings);
+	}
+
+	return true;
 }
 
 enum obs_media_state text_ss_get_state(void *data)

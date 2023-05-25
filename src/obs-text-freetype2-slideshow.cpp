@@ -17,8 +17,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 #include <obs-module.h>
+#include <obs-frontend-api.h>
 #include "obs-text-slideshow.h"
 #include "files.h"
+
+#define TEXT_FREETYPE2_SS_ID "text-freetype2-slideshow"
 
 #define S_FONT "font"
 #define S_TEXT "text"
@@ -108,6 +111,8 @@ static obs_source_t *create_freetype2(const char *file_path, const char *text,
 inline static void update_freetype2_alignment(obs_source_t *transition,
 					      obs_data_t *text_ss_settings)
 {
+	UNUSED_PARAMETER(text_ss_settings);
+
 	obs_transition_set_alignment(transition, OBS_ALIGN_CENTER);
 }
 
@@ -238,7 +243,7 @@ static obs_missing_files_t *freetype2_missing_files(void *data)
 void load_text_freetype2_slideshow()
 {
 	obs_source_info info = {};
-	info.id = "text-freetype2-slideshow";
+	info.id = TEXT_FREETYPE2_SS_ID;
 	info.type = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
 			    OBS_SOURCE_COMPOSITE |
