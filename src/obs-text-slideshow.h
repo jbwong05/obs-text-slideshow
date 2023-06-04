@@ -19,6 +19,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #pragma once
 
 #include "obs-module.h"
+#include "transitions/transition.h"
+#include "utils.h"
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/darray.h>
@@ -54,7 +56,6 @@ using std::vector;
 #define S_READ_MULTIPLE_FILES "read_multiple_files"
 #define S_FILES "files"
 
-#define TR_CUT "cut"
 #define TR_FADE "fade"
 #define TR_SWIPE "swipe"
 #define TR_SLIDE "slide"
@@ -86,17 +87,9 @@ using std::vector;
 #define T_USE_MULTIPLE_FILE T_SS_("ReadFromMultipleFiles")
 #define T_FILES T_SS_("Files")
 
-#define T_TR_(text) obs_module_text("SlideShow.Transition." text)
-#define T_TR_CUT T_TR_("Cut")
 #define T_TR_FADE T_TR_("Fade")
 #define T_TR_SWIPE T_TR_("Swipe")
 #define T_TR_SLIDE T_TR_("Slide")
-
-#define set_vis(val, show)                          \
-	do {                                        \
-		p = obs_properties_get(props, val); \
-		obs_property_set_visible(p, show);  \
-	} while (false)
 
 struct text_data {
 	char *file_path;
@@ -111,6 +104,8 @@ enum behavior {
 };
 
 struct text_slideshow {
+	vector<transition *> *transitions;
+
 	obs_source_t *source;
 	obs_data_t *settings;
 
@@ -127,7 +122,7 @@ struct text_slideshow {
 	float slide_time;
 	uint32_t tr_speed;
 	const char *tr_name;
-	obs_source_t *transition;
+	obs_source_t *transition_source;
 
 	float elapsed;
 	size_t cur_item;
@@ -186,8 +181,6 @@ bool text_ss_audio_render(void *data, uint64_t *ts_out,
 			  struct obs_source_audio_mix *audio_output,
 			  uint32_t mixers, size_t channels, size_t sample_rate);
 void text_ss_enum_sources(void *data, obs_source_enum_proc_t cb, void *param);
-void text_ss_enum_all_sources(void *data, obs_source_enum_proc_t callback,
-			      void *param);
 uint32_t text_ss_width(void *data);
 uint32_t text_ss_height(void *data);
 void ss_defaults(obs_data_t *settings);

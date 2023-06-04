@@ -20,6 +20,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <vector>
 #include <algorithm>
 #include "files.h"
+#include "transitions/transition-utils.h"
 
 using std::vector;
 
@@ -192,7 +193,8 @@ void text_ss_destroy(void *data)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
-	obs_source_release(text_ss->transition);
+	obs_source_release(text_ss->transition_source);
+	destroy_transitions(text_ss->transitions);
 	free_text_srcs(&text_ss->text_srcs.da);
 	pthread_mutex_destroy(&text_ss->mutex);
 	pthread_cond_destroy(&text_ss->dock_get_texts);
@@ -246,17 +248,17 @@ static void do_transition(void *data, bool to_null)
 
 	if (valid && text_ss->use_cut) {
 		obs_transition_set(
-			text_ss->transition,
+			text_ss->transition_source,
 			text_ss->text_srcs.array[text_ss->cur_item].source);
 
 	} else if (valid && !to_null) {
 		obs_transition_start(
-			text_ss->transition, OBS_TRANSITION_MODE_AUTO,
+			text_ss->transition_source, OBS_TRANSITION_MODE_AUTO,
 			text_ss->tr_speed,
 			text_ss->text_srcs.array[text_ss->cur_item].source);
 
 	} else {
-		obs_transition_start(text_ss->transition,
+		obs_transition_start(text_ss->transition_source,
 				     OBS_TRANSITION_MODE_AUTO,
 				     text_ss->tr_speed, NULL);
 		set_media_state(text_ss, OBS_MEDIA_STATE_ENDED);
@@ -271,7 +273,7 @@ static void dock_transition(void *data, calldata_t *cd)
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (!text_ss->text_srcs.num ||
-	    obs_transition_get_time(text_ss->transition) < 1.0f)
+	    obs_transition_get_time(text_ss->transition_source) < 1.0f)
 		return;
 
 	if (index >= text_ss->text_srcs.num)
@@ -292,6 +294,8 @@ void *text_ss_create(obs_data_t *settings, obs_source_t *source)
 	text_ss->manual = false;
 	text_ss->paused = false;
 	text_ss->stop = false;
+
+	text_ss->transitions = load_transitions();
 
 	text_ss->play_pause_hotkey = obs_hotkey_register_source(
 		source, "SlideShow.PlayPause",
@@ -432,21 +436,14 @@ void text_ss_update(void *data, obs_data_t *settings,
 	text_ss->manual = (astrcmpi(mode, S_MODE_MANUAL) == 0);
 
 	tr_name = obs_data_get_string(settings, S_TRANSITION);
-	if (astrcmpi(tr_name, TR_CUT) == 0)
-		tr_name = "cut_transition";
-	else if (astrcmpi(tr_name, TR_SWIPE) == 0)
-		tr_name = "swipe_transition";
-	else if (astrcmpi(tr_name, TR_SLIDE) == 0)
-		tr_name = "slide_transition";
-	else
-		tr_name = "fade_transition";
+	int new_transition_index = match_transition(text_ss->transitions, tr_name);
 
 	text_ss->randomize = obs_data_get_bool(settings, S_RANDOMIZE);
 	text_ss->loop = obs_data_get_bool(settings, S_LOOP);
 	text_ss->hide = obs_data_get_bool(settings, S_HIDE);
 
-	if (!text_ss->tr_name || strcmp(tr_name, text_ss->tr_name) != 0)
-		new_tr = obs_source_create_private(tr_name, NULL, NULL);
+	if (new_transition_index != -1 && (!text_ss->tr_name || strcmp(text_ss->transitions->at(new_transition_index)->id, text_ss->tr_name) != 0))
+		new_tr = transition_vtables[new_transition_index].create_transition_source();
 
 	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
 	new_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
@@ -564,8 +561,8 @@ void text_ss_update(void *data, obs_data_t *settings,
 	old_text_srcs.da = text_ss->text_srcs.da;
 	text_ss->text_srcs.da = new_text_srcs.da;
 	if (new_tr) {
-		old_tr = text_ss->transition;
-		text_ss->transition = new_tr;
+		old_tr = text_ss->transition_source;
+		text_ss->transition_source = new_tr;
 	}
 
 	if (strcmp(tr_name, "cut_transition") != 0) {
@@ -648,9 +645,9 @@ void text_ss_update(void *data, obs_data_t *settings,
 	text_ss->cy = cy;
 	text_ss->cur_item = 0;
 	text_ss->elapsed = 0.0f;
-	obs_transition_set_size(text_ss->transition, cx, cy);
-	(*set_alignment)(text_ss->transition, settings);
-	obs_transition_set_scale_type(text_ss->transition,
+	obs_transition_set_size(text_ss->transition_source, cx, cy);
+	(*set_alignment)(text_ss->transition_source, settings);
+	obs_transition_set_scale_type(text_ss->transition_source,
 				      OBS_TRANSITION_SCALE_ASPECT);
 
 	if (text_ss->randomize && text_ss->text_srcs.num)
@@ -698,7 +695,7 @@ static obs_source_t *get_transition(struct text_slideshow *text_ss)
 	obs_source_t *tr;
 
 	pthread_mutex_lock(&text_ss->mutex);
-	tr = text_ss->transition;
+	tr = text_ss->transition_source;
 	obs_source_get_ref(tr);
 	pthread_mutex_unlock(&text_ss->mutex);
 
@@ -778,7 +775,7 @@ void text_ss_video_tick(void *data, float seconds)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
-	if (!text_ss->transition || !text_ss->slide_time)
+	if (!text_ss->transition_source || !text_ss->slide_time)
 		return;
 
 	if (text_ss->restart_on_activate && text_ss->use_cut) {
@@ -800,7 +797,7 @@ void text_ss_video_tick(void *data, float seconds)
 	/* fade to transparency when the file list becomes empty */
 	if (!text_ss->text_srcs.num) {
 		obs_source_t *active_transition_source =
-			obs_transition_get_active_source(text_ss->transition);
+			obs_transition_get_active_source(text_ss->transition_source);
 
 		if (active_transition_source) {
 			obs_source_release(active_transition_source);
@@ -901,21 +898,21 @@ void text_ss_enum_sources(void *data, obs_source_enum_proc_t cb, void *param)
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	pthread_mutex_lock(&text_ss->mutex);
-	if (text_ss->transition)
-		cb(text_ss->source, text_ss->transition, param);
+	if (text_ss->transition_source)
+		cb(text_ss->source, text_ss->transition_source, param);
 	pthread_mutex_unlock(&text_ss->mutex);
 }
 
 uint32_t text_ss_width(void *data)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
-	return text_ss->transition ? text_ss->cx : 0;
+	return text_ss->transition_source ? text_ss->cx : 0;
 }
 
 uint32_t text_ss_height(void *data)
 {
 	struct text_slideshow *text_ss = (text_slideshow *)data;
-	return text_ss->transition ? text_ss->cy : 0;
+	return text_ss->transition_source ? text_ss->cy : 0;
 }
 
 void ss_defaults(obs_data_t *settings)
@@ -1033,10 +1030,11 @@ void ss_properites(void *data, obs_properties_t *props)
 	p = obs_properties_add_list(props, S_TRANSITION, T_TRANSITION,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, T_TR_CUT, TR_CUT);
-	obs_property_list_add_string(p, T_TR_FADE, TR_FADE);
-	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
-	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
+	vector<transition *> *transitions = text_ss->transitions;
+	for(unsigned int i = 0; i < transitions->size(); i++) {
+		transition *curr_transition = transitions->at(i);
+		obs_property_list_add_string(p, curr_transition->prop_name, curr_transition->prop_val);
+	}
 
 	p = obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50,
 				   3600000, 50);
@@ -1117,7 +1115,7 @@ void text_ss_next_slide(void *data)
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (!text_ss->text_srcs.num ||
-	    obs_transition_get_time(text_ss->transition) < 1.0f)
+	    obs_transition_get_time(text_ss->transition_source) < 1.0f)
 		return;
 
 	if (++text_ss->cur_item >= text_ss->text_srcs.num)
@@ -1131,7 +1129,7 @@ void text_ss_previous_slide(void *data)
 	struct text_slideshow *text_ss = (text_slideshow *)data;
 
 	if (!text_ss->text_srcs.num ||
-	    obs_transition_get_time(text_ss->transition) < 1.0f)
+	    obs_transition_get_time(text_ss->transition_source) < 1.0f)
 		return;
 
 	if (text_ss->cur_item == 0)
