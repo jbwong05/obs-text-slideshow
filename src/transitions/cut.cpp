@@ -16,13 +16,21 @@ transition *create_cut_transition() {
     cut_transition->id = CUT_TRANSITION_ID;
     cut_transition->prop_name = T_TR_CUT;
     cut_transition->prop_val = TR_CUT;
-    cut_transition->properties = new unordered_set<obs_property_t *>;
+    cut_transition->property_names = new unordered_set<const char *>;
 
     return cut_transition;
 }
 
 void destroy_cut_transition(transition *transition) {
-    transition->properties->clear();
-    delete transition->properties;
+    unordered_set<const char *> *property_names = transition->property_names;
+    auto iter = property_names->begin();
+    while(iter != property_names->end()) {
+        if(*iter) {
+            bfree((void *)(*iter));
+        }
+        iter++;
+    }
+
+    delete transition->property_names;
     bfree(transition);
 }

@@ -1,4 +1,5 @@
 #include "transition-utils.h"
+#include "utils.h"
 #include <util/dstr.h>
 
 vector<struct transition *> *load_transitions() {
@@ -33,4 +34,29 @@ void destroy_transitions(vector<transition *> *transitions) {
     }
 
     delete transitions;
+}
+
+bool transition_selected_callback(void * data, obs_properties_t *props, obs_property_t *p, obs_data_t *settings) {
+    vector<transition *> *transitions = (vector<transition *> *)data;
+    const char *tr_name = obs_data_get_string(settings, S_TRANSITION);
+    int new_transition_index = match_transition(transitions, tr_name);
+
+    if(new_transition_index != -1) {
+        for(unsigned int i = 0; i < transitions->size(); i++) {
+            transition *curr_transition = transitions->at(i);
+            unordered_set<const char *> *property_names = curr_transition->property_names;
+            auto iter = property_names->begin();
+            while(iter != property_names->end()) {
+                const char *curr_name = *iter;
+                set_vis(curr_name, (int)i == new_transition_index);
+                iter++;
+            }
+        }
+
+        return true;
+    } else {
+        return false;
+    }
+
+    return true;
 }

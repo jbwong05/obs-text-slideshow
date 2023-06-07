@@ -4,6 +4,7 @@
 
 using std::unordered_set;
 
+#define S_TRANSITION "transition"
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 
 typedef obs_source_t *(*transition_source_create)();
@@ -22,5 +23,5 @@ typedef struct transition {
 	const char *id;
 	const char *prop_name;
 	const char *prop_val;
-	unordered_set<obs_property_t *> *properties;
+	unordered_set<const char *> *property_names;
 } transition;

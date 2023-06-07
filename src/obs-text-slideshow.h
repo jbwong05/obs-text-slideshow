@@ -36,7 +36,6 @@ using std::vector;
 #define S_TR_SPEED "transition_speed"
 #define S_CUSTOM_SIZE "use_custom_size"
 #define S_SLIDE_TIME "slide_time"
-#define S_TRANSITION "transition"
 #define S_RANDOMIZE "randomize"
 #define S_LOOP "loop"
 #define S_HIDE "hide"

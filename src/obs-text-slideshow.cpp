@@ -1035,6 +1035,7 @@ void ss_properites(void *data, obs_properties_t *props)
 		transition *curr_transition = transitions->at(i);
 		obs_property_list_add_string(p, curr_transition->prop_name, curr_transition->prop_val);
 	}
+	obs_property_set_modified_callback2(p, transition_selected_callback, text_ss->transitions);
 
 	p = obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50,
 				   3600000, 50);
