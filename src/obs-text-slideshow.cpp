@@ -443,7 +443,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 	text_ss->hide = obs_data_get_bool(settings, S_HIDE);
 
 	if (new_transition_index != -1 && (!text_ss->tr_name || strcmp(text_ss->transitions->at(new_transition_index)->id, text_ss->tr_name) != 0))
-		new_tr = transition_vtables[new_transition_index].create_transition_source();
+		new_tr = transition_vtables[new_transition_index].create_transition_source(settings);
 
 	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
 	new_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
@@ -565,7 +565,7 @@ void text_ss_update(void *data, obs_data_t *settings,
 		text_ss->transition_source = new_tr;
 	}
 
-	if (strcmp(tr_name, "cut_transition") != 0) {
+	if (strcmp(tr_name, CUT_TRANSITION_ID) != 0) {
 		if (new_duration < 100)
 			new_duration = 100;
 
@@ -1034,6 +1034,7 @@ void ss_properites(void *data, obs_properties_t *props)
 	for(unsigned int i = 0; i < transitions->size(); i++) {
 		transition *curr_transition = transitions->at(i);
 		obs_property_list_add_string(p, curr_transition->prop_name, curr_transition->prop_val);
+		(transition_vtables[i].setup_transition_properties)(curr_transition, props, i == 0);
 	}
 	obs_property_set_modified_callback2(p, transition_selected_callback, text_ss->transitions);
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "cut.h"
 #include "fade.h"
+#include "slide.h"
 #include <vector>
 
 using std::vector;
@@ -17,6 +18,12 @@ static vector<transition_vtable> transition_vtables = {
 	    cut_transition_setup_properties,
         create_cut_transition,
 	    destroy_cut_transition
+    },
+    {
+        slide_transition_source_create,
+        slide_transition_setup_properties,
+        create_slide_transition,
+        destroy_slide_transition
     }
 };
 

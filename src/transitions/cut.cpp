@@ -3,12 +3,15 @@
 #define T_TR_CUT T_TR_("Cut")
 #define TR_CUT "cut"
 
-obs_source_t *cut_transition_source_create() {
+obs_source_t *cut_transition_source_create(obs_data_t *settings) {
+    UNUSED_PARAMETER(settings);
 	return obs_source_create_private(CUT_TRANSITION_ID, NULL, NULL);
 }
 
-void cut_transition_setup_properties(obs_property_t *prop) {
-    UNUSED_PARAMETER(prop);
+void cut_transition_setup_properties(transition *transition, obs_properties_t *props, bool visisble) {
+    UNUSED_PARAMETER(transition);
+    UNUSED_PARAMETER(props);
+    UNUSED_PARAMETER(visisble);
 }
 
 transition *create_cut_transition() {
@@ -22,15 +25,5 @@ transition *create_cut_transition() {
 }
 
 void destroy_cut_transition(transition *transition) {
-    unordered_set<const char *> *property_names = transition->property_names;
-    auto iter = property_names->begin();
-    while(iter != property_names->end()) {
-        if(*iter) {
-            bfree((void *)(*iter));
-        }
-        iter++;
-    }
-
-    delete transition->property_names;
     bfree(transition);
 }

@@ -7,8 +7,8 @@ using std::unordered_set;
 #define S_TRANSITION "transition"
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 
-typedef obs_source_t *(*transition_source_create)();
-typedef void (*transition_setup_properties)(obs_property_t *prop);
+typedef obs_source_t *(*transition_source_create)(obs_data_t *);
+typedef void (*transition_setup_properties)(struct transition *, obs_properties_t *props, bool);
 typedef struct transition *(*create_transition)();
 typedef void (*destroy_transition)(struct transition *transition);
 
