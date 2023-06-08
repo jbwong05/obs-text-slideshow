@@ -8,14 +8,15 @@ using std::unordered_set;
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 
 typedef obs_source_t *(*transition_source_create)(obs_data_t *);
-typedef void (*transition_setup_properties)(struct transition *, obs_properties_t *props, bool);
+typedef void (*transition_setup_properties)(struct transition *,
+					    obs_properties_t *props, bool);
 typedef struct transition *(*create_transition)();
 typedef void (*destroy_transition)(struct transition *transition);
 
 typedef struct transition_vtable {
 	transition_source_create create_transition_source;
 	transition_setup_properties setup_transition_properties;
-    create_transition constructor;
+	create_transition constructor;
 	destroy_transition destructor;
 } transition_vtable;
 

@@ -436,14 +436,19 @@ void text_ss_update(void *data, obs_data_t *settings,
 	text_ss->manual = (astrcmpi(mode, S_MODE_MANUAL) == 0);
 
 	tr_name = obs_data_get_string(settings, S_TRANSITION);
-	int new_transition_index = match_transition(text_ss->transitions, tr_name);
+	int new_transition_index =
+		match_transition(text_ss->transitions, tr_name);
 
 	text_ss->randomize = obs_data_get_bool(settings, S_RANDOMIZE);
 	text_ss->loop = obs_data_get_bool(settings, S_LOOP);
 	text_ss->hide = obs_data_get_bool(settings, S_HIDE);
 
-	if (new_transition_index != -1 && (!text_ss->tr_name || strcmp(text_ss->transitions->at(new_transition_index)->id, text_ss->tr_name) != 0))
-		new_tr = transition_vtables[new_transition_index].create_transition_source(settings);
+	if (new_transition_index != -1 &&
+	    (!text_ss->tr_name ||
+	     strcmp(text_ss->transitions->at(new_transition_index)->id,
+		    text_ss->tr_name) != 0))
+		new_tr = transition_vtables[new_transition_index]
+				 .create_transition_source(settings);
 
 	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
 	new_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
@@ -797,7 +802,8 @@ void text_ss_video_tick(void *data, float seconds)
 	/* fade to transparency when the file list becomes empty */
 	if (!text_ss->text_srcs.num) {
 		obs_source_t *active_transition_source =
-			obs_transition_get_active_source(text_ss->transition_source);
+			obs_transition_get_active_source(
+				text_ss->transition_source);
 
 		if (active_transition_source) {
 			obs_source_release(active_transition_source);
@@ -1031,12 +1037,15 @@ void ss_properites(void *data, obs_properties_t *props)
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	vector<transition *> *transitions = text_ss->transitions;
-	for(unsigned int i = 0; i < transitions->size(); i++) {
+	for (unsigned int i = 0; i < transitions->size(); i++) {
 		transition *curr_transition = transitions->at(i);
-		obs_property_list_add_string(p, curr_transition->prop_name, curr_transition->prop_val);
-		(transition_vtables[i].setup_transition_properties)(curr_transition, props, i == 0);
+		obs_property_list_add_string(p, curr_transition->prop_name,
+					     curr_transition->prop_val);
+		(transition_vtables[i].setup_transition_properties)(
+			curr_transition, props, i == 0);
 	}
-	obs_property_set_modified_callback2(p, transition_selected_callback, text_ss->transitions);
+	obs_property_set_modified_callback2(p, transition_selected_callback,
+					    text_ss->transitions);
 
 	p = obs_properties_add_int(props, S_SLIDE_TIME, T_SLIDE_TIME, 50,
 				   3600000, 50);

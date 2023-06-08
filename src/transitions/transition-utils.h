@@ -8,33 +8,17 @@
 using std::vector;
 
 static vector<transition_vtable> transition_vtables = {
-    {
-        fade_transition_source_create,
-        fade_transition_setup_properties,
-        create_fade_transition,
-        destroy_fade_transition
-    },
-	{
-        cut_transition_source_create,
-	    cut_transition_setup_properties,
-        create_cut_transition,
-	    destroy_cut_transition
-    },
-    {
-        swipe_transition_source_create,
-        swipe_transition_setup_properties,
-        create_swipe_transition,
-        destroy_swipe_transition
-    },
-    {
-        slide_transition_source_create,
-        slide_transition_setup_properties,
-        create_slide_transition,
-        destroy_slide_transition
-    }
-};
+	{fade_transition_source_create, fade_transition_setup_properties,
+	 create_fade_transition, destroy_fade_transition},
+	{cut_transition_source_create, cut_transition_setup_properties,
+	 create_cut_transition, destroy_cut_transition},
+	{swipe_transition_source_create, swipe_transition_setup_properties,
+	 create_swipe_transition, destroy_swipe_transition},
+	{slide_transition_source_create, slide_transition_setup_properties,
+	 create_slide_transition, destroy_slide_transition}};
 
 vector<transition *> *load_transitions();
 int match_transition(vector<transition *> *, const char *);
 void destroy_transitions(vector<transition *> *);
-bool transition_selected_callback(void *, obs_properties_t *, obs_property_t *, obs_data_t *);
+bool transition_selected_callback(void *, obs_properties_t *, obs_property_t *,
+				  obs_data_t *);
