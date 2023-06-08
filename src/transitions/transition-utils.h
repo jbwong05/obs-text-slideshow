@@ -1,6 +1,7 @@
 #pragma once
 #include "cut.h"
 #include "fade.h"
+#include "swipe.h"
 #include "slide.h"
 #include <vector>
 
@@ -18,6 +19,12 @@ static vector<transition_vtable> transition_vtables = {
 	    cut_transition_setup_properties,
         create_cut_transition,
 	    destroy_cut_transition
+    },
+    {
+        swipe_transition_source_create,
+        swipe_transition_setup_properties,
+        create_swipe_transition,
+        destroy_swipe_transition
     },
     {
         slide_transition_source_create,

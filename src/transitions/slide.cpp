@@ -1,6 +1,6 @@
 #include "slide.h"
 
-#define S_SLIDE_DIRECTION "direction"
+#define S_SLIDE_DIRECTION "slide_direction"
 #define S_SLIDE_LEFT "left"
 #define S_SLIDE_RIGHT "right"
 #define S_SLIDE_UP "up"
@@ -10,8 +10,15 @@
 #define TR_SLIDE "slide"
 #define SLIDE_LOCALE(text) T_TR_("Slide." text)
 
+#define DIRECTION "direction"
+
 obs_source_t *slide_transition_source_create(obs_data_t *settings) {
-	return obs_source_create_private(SLIDE_TRANSITION_ID, NULL, settings);
+    const char *direction = obs_data_get_string(settings, S_SLIDE_DIRECTION);
+    obs_data_t *data = obs_data_create();
+    obs_data_set_string(data, DIRECTION, direction);
+    obs_source_t *source = obs_source_create_private(SLIDE_TRANSITION_ID, NULL, data);
+    obs_data_release(data);
+	return source;
 }
 
 void slide_transition_setup_properties(transition *transition, obs_properties_t *props, bool visible) {
